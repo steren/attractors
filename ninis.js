@@ -1,8 +1,10 @@
 var SIZE_SHADOW = 8;
 var DELTA_SHADOW_X = 1;
 var DELTA_SHADOW_Y = 1;
-var NB_ATTRACTORS = 100;
-var NB_PARTICULES = 1000;
+var NB_ATTRACTORS = 20;
+var NB_PARTICULES = 800;
+
+var STROKE_LINE_WIDTH = 0.4;
 
 var STEP_DISTANCE = 1;
 
@@ -98,7 +100,7 @@ function drawline(x1, y1, x2, y2) {
   ctx.strokeStyle = "#F7F6F5";
   ctx.moveTo(x1,y1);
   ctx.lineTo(x2,y2);
-  ctx.lineWidth = 0.5;
+  ctx.lineWidth = STROKE_LINE_WIDTH;
   ctx.stroke();
 
   shadowCanvasCtx.drawImage(shadow, x2 - (SIZE_SHADOW / 2) + DELTA_SHADOW_X, y2 - (SIZE_SHADOW / 2) + DELTA_SHADOW_Y);
@@ -127,7 +129,7 @@ function getNewPosition(x,y) {
 function field(x, y) {
   var ux = 0;
   var uy = 0;
-  for(var a = 0; a < NB_ATTRACTORS; a++) {
+  for(var a = 0; a < attractors.length; a++) {
     var attractor = attractors[a];
 
     var d2 =  Math.pow(x - attractor.x, 2) + Math.pow(y - attractor.y, 2);
@@ -153,12 +155,12 @@ function initAttractors() {
   var dimX = canvas.width;
   var dimY = canvas.height;
 
-  var minW = -1;
+  var minW = 0;
   var maxW =  1;
 
   var D = Math.max(dimX, dimY);
-  var minD = 4*D;
-  var maxD = 64*D;
+  var minD = 8*D;
+  var maxD = 128*D;
 
   for( var a = 0; a < NB_ATTRACTORS; a++) {
     var attractor = {};  
@@ -167,7 +169,5 @@ function initAttractors() {
     attractor.weight = Math.random() * (maxW - minW) + minW;
     attractor.radius = Math.random() * (maxD - minD) + minD;
     attractors.push(attractor);
-
   }
 }
-
