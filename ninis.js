@@ -1,6 +1,10 @@
 var canvas, ctx;
+var shadowCanvas, shadowCanvasCtx;
+var shadow;
+var SIZE_SHADOW = 16;
 
-var N = 1000;
+var nbParticules = 1000;
+
 
 var G = 100;
 var mCursor = 100
@@ -18,15 +22,19 @@ init();
 animate();
 
 function init() {
-  canvas = document.getElementById("paint");
+  canvas = document.getElementById("paint-canvas");
   ctx = canvas.getContext("2d");
 
+  shadowCanvas = document.getElementById("shadow-canvas");
+  shadowCanvasCtx = shadowCanvas.getContext("2d");
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  shadow = new Image();
+  shadow.src = 'shadow-o40-' + SIZE_SHADOW + 'px.png';
+  // TODO: use data:url?
 
+  resizeCanvasesToWindow();
 
-  for(var i = 0; i < N; i++) {
+  for(var i = 0; i < nbParticules; i++) {
     pointsX.push(Math.random() * canvas.width);
     pointsY.push(Math.random() * canvas.height);
   }
@@ -35,8 +43,16 @@ function init() {
   window.addEventListener( 'resize', onWindowResize, false );
 }
 
+function resizeCanvasesToWindow() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  shadowCanvas.width = window.innerWidth;
+  shadowCanvas.height = window.innerHeight;
+}
+
 function onWindowResize() {
-  // todo resize canvas
+  resizeCanvasesToWindow();
 }
 
 function onDocumentMouseMove(event) {
@@ -67,10 +83,15 @@ function render(timestamp) {
 
 function drawline(x1, y1, x2, y2) {
   ctx.beginPath();
+  // using shadowBlur has really bad performances.
+  // ctx.shadowColor = "black";
+  // ctx.shadowBlur = 10;
   ctx.strokeStyle = "#F7F6F5";
   ctx.moveTo(x1,y1);
   ctx.lineTo(x2,y2);
   ctx.stroke();
+
+  shadowCanvasCtx.drawImage(shadow, x2 - SIZE_SHADOW / 2, y2 - SIZE_SHADOW / 2);
 }
 
 function getNewPosition(x, y, delta) {
@@ -79,7 +100,7 @@ function getNewPosition(x, y, delta) {
 
     var newX, newY;
     
-    if(r2 > G) {
+    if(r2 > G * mCursor) {
       newX = x - G * mCursor * (x - mouseX) / (r2 * Math.sqrt(r2));
       newY = y - G * mCursor * (y - mouseY) / (r2 * Math.sqrt(r2));
     } else {

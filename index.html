@@ -10,10 +10,21 @@
 			margin: 0px;
 			overflow: hidden;
 		}
+
+		canvas {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+		}
+
+		#shadow-canvas {
+			opacity: 0.2;
+		}
 	</style>
 </head>
 <body>
-	<canvas id="paint"></canvas>
+	<canvas id="shadow-canvas"></canvas>
+	<canvas id="paint-canvas"></canvas>
 	<script src="ninis.js"></script></script>
 </body>
 </html>
