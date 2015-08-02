@@ -1,11 +1,14 @@
-var canvas, ctx;
-var shadowCanvas, shadowCanvasCtx;
-var shadow;
 var SIZE_SHADOW = 8;
 var DELTA_SHADOW_X = 1;
 var DELTA_SHADOW_Y = 1;
+var NB_ATTRACTORS = 100;
+var NB_PARTICULES = 1000;
 
-var nbParticules = 1000;
+var STEP_DISTANCE = 1;
+
+var canvas, ctx;
+var shadowCanvas, shadowCanvasCtx;
+var shadow;
 
 
 var G = 100;
@@ -17,6 +20,8 @@ var mouseX = 0, mouseY = 0;
 
 var pointsX = [];
 var pointsY = [];
+
+var attractors = [];
 
 var lastTime;
 
@@ -36,7 +41,9 @@ function init() {
 
   resizeCanvasesToWindow();
 
-  for(var i = 0; i < nbParticules; i++) {
+  initAttractors();
+
+  for(var i = 0; i < NB_PARTICULES; i++) {
     pointsX.push(Math.random() * canvas.width);
     pointsY.push(Math.random() * canvas.height);
   }
@@ -91,26 +98,76 @@ function drawline(x1, y1, x2, y2) {
   ctx.strokeStyle = "#F7F6F5";
   ctx.moveTo(x1,y1);
   ctx.lineTo(x2,y2);
+  ctx.lineWidth = 0.5;
   ctx.stroke();
 
   shadowCanvasCtx.drawImage(shadow, x2 - (SIZE_SHADOW / 2) + DELTA_SHADOW_X, y2 - (SIZE_SHADOW / 2) + DELTA_SHADOW_Y);
 }
 
 function getNewPosition(x, y, delta) {
-  if(delta > 0) {
-    var r2 = (x - mouseX) * (x - mouseX) + (y - mouseY) * (y - mouseY); 
+  return getNewPosition(x,y);
+}
 
-    var newX, newY;
-    
-    if(r2 > G * mCursor) {
-      newX = x - G * mCursor * (x - mouseX) / (r2 * Math.sqrt(r2));
-      newY = y - G * mCursor * (y - mouseY) / (r2 * Math.sqrt(r2));
-    } else {
-      newX = x;
-      newY = y;
-    }
-    return [newX, newY];
-  } else {
-    return [x, y];
+function getNewPosition(x,y) {
+  var fieldXY = field(x,y); 
+
+  var ux = -1 * STEP_DISTANCE * fieldXY[1];
+  var uy =      STEP_DISTANCE * fieldXY[0];
+
+  var newX = x + ux;
+  var newY = y + uy;
+
+  return [newX, newY];
+}
+
+
+/**
+ * Value of the field at a given point 
+ */
+function field(x, y) {
+  var ux = 0;
+  var uy = 0;
+  for(var a = 0; a < NB_ATTRACTORS; a++) {
+    var attractor = attractors[a];
+
+    var d2 =  Math.pow(x - attractor.x, 2) + Math.pow(y - attractor.y, 2);
+    var d = Math.sqrt(d2);
+
+    var weight = attractor.weight * Math.exp( -1 * d2 / attractor.radius );
+
+    ux += weight * (x - attractor.x) / d;
+    uy += weight * (y - attractor.y) / d;
+  }
+
+  var norm = Math.sqrt(ux*ux + uy * uy);
+  ux = ux / norm;
+  uy = uy / norm;
+
+  return [ux, uy];
+}
+
+
+
+
+function initAttractors() {
+  var dimX = canvas.width;
+  var dimY = canvas.height;
+
+  var minW = -1;
+  var maxW =  1;
+
+  var D = Math.max(dimX, dimY);
+  var minD = 4*D;
+  var maxD = 64*D;
+
+  for( var a = 0; a < NB_ATTRACTORS; a++) {
+    var attractor = {};  
+    attractor.x = Math.random() * (dimX - 1);
+    attractor.y = Math.random() * (dimY - 1);
+    attractor.weight = Math.random() * (maxW - minW) + minW;
+    attractor.radius = Math.random() * (maxD - minD) + minD;
+    attractors.push(attractor);
+
   }
 }
+
