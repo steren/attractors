@@ -1,7 +1,9 @@
 var canvas, ctx;
 var shadowCanvas, shadowCanvasCtx;
 var shadow;
-var SIZE_SHADOW = 16;
+var SIZE_SHADOW = 8;
+var DELTA_SHADOW_X = 1;
+var DELTA_SHADOW_Y = 1;
 
 var nbParticules = 1000;
 
@@ -91,7 +93,7 @@ function drawline(x1, y1, x2, y2) {
   ctx.lineTo(x2,y2);
   ctx.stroke();
 
-  shadowCanvasCtx.drawImage(shadow, x2 - SIZE_SHADOW / 2, y2 - SIZE_SHADOW / 2);
+  shadowCanvasCtx.drawImage(shadow, x2 - (SIZE_SHADOW / 2) + DELTA_SHADOW_X, y2 - (SIZE_SHADOW / 2) + DELTA_SHADOW_Y);
 }
 
 function getNewPosition(x, y, delta) {
