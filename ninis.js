@@ -1,13 +1,13 @@
 var camera, scene, renderer;
 
-var geometry;
+//var geometry;
 
 var mouseX = 0, mouseY = 0;
 
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
 
-var lines = [];
+var lineGeometries = [];
 
 init();
 animate();
@@ -18,28 +18,26 @@ function init() {
 
     scene = new THREE.Scene();
 
-    geometry = new THREE.Geometry();
+    var material = new THREE.LineBasicMaterial({color: 0xF7F6F5, linewidth: 1});
+
     for ( var i = 0; i < 2000; i ++ ) {
-        var vertex = new THREE.Vector3();
-        vertex.x = Math.random() * 4000 - 2000;
-        vertex.y = Math.random() * 4000 - 2000;
-        vertex.z = Math.random() * 4000 - 2000;
-        geometry.vertices.push( vertex );
-        geometry.colors.push( new THREE.Color( 0xF7F6F5 ) );
+      var geometry = new THREE.Geometry();
+      var vertex = new THREE.Vector3();
+      vertex.x = Math.random() * 4000 - 2000;
+      vertex.y = Math.random() * 4000 - 2000;
+      vertex.z = Math.random() * 4000 - 2000;
+      geometry.vertices.push(
+          vertex,
+          new THREE.Vector3( vertex.x, vertex.y, vertex.z )
+      );
+      lineGeometries.push( geometry );
+
+      var line = new THREE.Line( geometry, material );
+      scene.add( line );
+      
     }
 
-    var material = new THREE.PointCloudMaterial({ 
-      size: 1, 
-      vertexColors: THREE.VertexColors, 
-      //depthTest: false, 
-      //opacity: 0.5, 
-      sizeAttenuation: false, 
-      //transparent: true 
-    });
-
-
-    var mesh = new THREE.PointCloud( geometry, material );
-    scene.add( mesh );
+    camera.lookAt( scene.position );
 
     renderer = new THREE.WebGLRenderer( { preserveDrawingBuffer: true, alpha: true } );
     renderer.setPixelRatio( window.devicePixelRatio );
@@ -78,18 +76,15 @@ function animate() {
 }
 
 function render() {
+  for (var i = 0; i < lineGeometries.length; i++ ) {
+    lineGeometries[i].vertices[0].x = lineGeometries[i].vertices[1].x;
+    lineGeometries[i].vertices[0].y = lineGeometries[i].vertices[1].y;
+    lineGeometries[i].vertices[0].z = lineGeometries[i].vertices[1].z;
 
-  
-  for ( var i = 0; i < geometry.vertices.length; i ++ ) {
-    geometry.vertices[i].x += mouseX * .005;
-    geometry.vertices[i].y += mouseY * .005;
+    lineGeometries[i].vertices[1].x += mouseX * .05;
+    lineGeometries[i].vertices[1].y += mouseY * .05;
+
+    lineGeometries[i].verticesNeedUpdate = true;
   }
-  geometry.verticesNeedUpdate = true;
-
-  //camera.position.x += ( mouseX - camera.position.x ) * .05;
-  //camera.position.y += ( - mouseY - camera.position.y ) * .05;
-
-  camera.lookAt( scene.position );
-
   renderer.render( scene, camera );
 }
