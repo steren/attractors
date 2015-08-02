@@ -1,20 +1,24 @@
 var camera, scene, renderer;
 
+var geometry;
+
 var mouseX = 0, mouseY = 0;
 
 var windowHalfX = window.innerWidth / 2;
 var windowHalfY = window.innerHeight / 2;
+
+var lines = [];
 
 init();
 animate();
 
 function init() {
     camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 10000 );
-    camera.position.set( 100000, 0, 3200 );
+    camera.position.set( 0, 0, 2000 );
 
     scene = new THREE.Scene();
 
-    var geometry = new THREE.Geometry();
+    geometry = new THREE.Geometry();
     for ( var i = 0; i < 2000; i ++ ) {
         var vertex = new THREE.Vector3();
         vertex.x = Math.random() * 4000 - 2000;
@@ -29,9 +33,10 @@ function init() {
       vertexColors: THREE.VertexColors, 
       //depthTest: false, 
       //opacity: 0.5, 
-      //sizeAttenuation: false, 
+      sizeAttenuation: false, 
       //transparent: true 
     });
+
 
     var mesh = new THREE.PointCloud( geometry, material );
     scene.add( mesh );
@@ -62,8 +67,8 @@ function onWindowResize() {
 }
 
 function onDocumentMouseMove(event) {
-    mouseX = ( event.clientX - windowHalfX ) * 10;
-    mouseY = ( event.clientY - windowHalfY ) * 10;
+    mouseX = ( event.clientX - windowHalfX );
+    mouseY = ( event.clientY - windowHalfY );
 }
 
 
@@ -73,10 +78,18 @@ function animate() {
 }
 
 function render() {
-    camera.position.x += ( mouseX - camera.position.x ) * .05;
-    camera.position.y += ( - mouseY - camera.position.y ) * .05;
 
-    camera.lookAt( scene.position );
+  
+  for ( var i = 0; i < geometry.vertices.length; i ++ ) {
+    geometry.vertices[i].x += mouseX * .005;
+    geometry.vertices[i].y += mouseY * .005;
+  }
+  geometry.verticesNeedUpdate = true;
 
-    renderer.render( scene, camera );
+  //camera.position.x += ( mouseX - camera.position.x ) * .05;
+  //camera.position.y += ( - mouseY - camera.position.y ) * .05;
+
+  camera.lookAt( scene.position );
+
+  renderer.render( scene, camera );
 }
