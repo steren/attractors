@@ -14,6 +14,7 @@ var colors = ['#DBCEC1', '#F7F6F5']
 var canvas, ctx;
 var shadow;
 var pixelRatio;
+var colorSize;
 
 var G = 100;
 var mCursor = 100
@@ -51,6 +52,10 @@ function init() {
     pointsY.push(Math.random() * canvas.height);
   }
 
+  colorSize = Math.floor(pointsX.length / colors.length);
+
+  ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
+
   document.addEventListener( 'mousemove', onDocumentMouseMove, false );
   window.addEventListener( 'resize', onWindowResize, false );
 }
@@ -81,28 +86,28 @@ function render(timestamp) {
   if (!lastTime) { lastTime = timestamp; }
   var delta = timestamp - lastTime;
 
-  for (var i = 0; i < pointsX.length; i++ ) {
-    var oldX = pointsX[i];
-    var oldY = pointsY[i];
-    var newPosition = getNewPosition(oldX, oldY, delta);
-    drawline(oldX, oldY, newPosition[0], newPosition[1], colors[i % colors.length]);
-
-    pointsX[i] = newPosition[0];
-    pointsY[i] = newPosition[1];
+  // cut the number of points per number of color, and paint all of the same color at once:
+  // start a path and add each segment to it, and only then, paint it. 
+  // This increases performances instead of painting each segment after the other.
+  for(var c = 0; c < colors.length; c++) {
+    ctx.beginPath();
+    ctx.strokeStyle = colors[c];
+    for (var i = c * colorSize; i < (c+1) * colorSize; i++ ) {
+      var oldX = pointsX[i];
+      var oldY = pointsY[i];
+      var newPosition = getNewPosition(oldX, oldY, delta);
+      ctx.moveTo(oldX,oldY);
+      ctx.lineTo(newPosition[0], newPosition[1]);
+      pointsX[i] = newPosition[0];
+      pointsY[i] = newPosition[1];
+    }
+    ctx.stroke();
   }
-}
 
-function drawline(x1, y1, x2, y2, color) {
-  ctx.beginPath();
-  // using shadowBlur has really bad performances.
-  // ctx.shadowColor = "black";
-  // ctx.shadowBlur = 10;
-  ctx.strokeStyle = color;
-  ctx.moveTo(x1,y1);
-  ctx.lineTo(x2,y2);
-  ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
-  ctx.stroke();
-  ctx.drawImage(shadow, x2 - DELTA_SHADOW_X * pixelRatio, y2 - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
+  for (var i = 0; i < pointsX.length; i++ ) {
+  ctx.drawImage(shadow, pointsX[i] - DELTA_SHADOW_X * pixelRatio, pointsY[i] - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
+  }
+
 }
 
 function getNewPosition(x, y, delta) {
