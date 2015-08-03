@@ -13,7 +13,7 @@ var colors = ['#DBCEC1', '#F7F6F5']
 
 var canvas, ctx;
 var shadow;
-
+var pixelRatio;
 
 var G = 100;
 var mCursor = 100
@@ -33,6 +33,8 @@ init();
 animate();
 
 function init() {
+
+  pixelRatio = window.devicePixelRatio || 1;
   canvas = document.getElementById("paint-canvas");
   ctx = canvas.getContext("2d");
 
@@ -53,9 +55,11 @@ function init() {
   window.addEventListener( 'resize', onWindowResize, false );
 }
 
-function resizeCanvasesToWindow() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+function resizeCanvasesToWindow() { 
+  canvas.width = window.innerWidth * pixelRatio;
+  canvas.height = window.innerHeight * pixelRatio;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
 }
 
 function onWindowResize() {
@@ -96,9 +100,9 @@ function drawline(x1, y1, x2, y2, color) {
   ctx.strokeStyle = color;
   ctx.moveTo(x1,y1);
   ctx.lineTo(x2,y2);
-  ctx.lineWidth = STROKE_LINE_WIDTH;
+  ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
   ctx.stroke();
-  ctx.drawImage(shadow, x2 - DELTA_SHADOW_X, y2 - DELTA_SHADOW_Y);
+  ctx.drawImage(shadow, x2 - DELTA_SHADOW_X, y2 - DELTA_SHADOW_Y, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
 }
 
 function getNewPosition(x, y, delta) {
