@@ -7,7 +7,7 @@ var NB_PARTICULES = 800;
 
 var STROKE_LINE_WIDTH = 0.4;
 
-var STEP_DISTANCE = 1.5;
+var SPEED = 100 /* pixels per millisecond */ / 1000;
 
 var colors = ['#DBCEC1', '#F7F6F5']
 
@@ -85,6 +85,7 @@ function animate(timestamp) {
 function render(timestamp) {
   if (!lastTime) { lastTime = timestamp; }
   var delta = timestamp - lastTime;
+  lastTime = timestamp;
 
   // cut the number of points per number of color, and paint all of the same color at once:
   // start a path and add each segment to it, and only then, paint it. 
@@ -110,15 +111,19 @@ function render(timestamp) {
 
 }
 
+/**
+ * delta: number of microsecond since last frame
+ */
 function getNewPosition(x, y, delta) {
-  return getNewPosition(x,y);
-}
-
-function getNewPosition(x,y) {
   var fieldXY = field(x,y); 
 
-  var ux = -1 * STEP_DISTANCE * pixelRatio * fieldXY[1];
-  var uy =      STEP_DISTANCE * pixelRatio * fieldXY[0];
+  var distance = 0;
+  if(delta) {
+    distance = SPEED * delta;
+  }
+
+  var ux = -1 * distance * pixelRatio * fieldXY[1];
+  var uy =      distance * pixelRatio * fieldXY[0];
 
   var newX = x + ux;
   var newY = y + uy;
