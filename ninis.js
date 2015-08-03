@@ -112,8 +112,8 @@ function getNewPosition(x, y, delta) {
 function getNewPosition(x,y) {
   var fieldXY = field(x,y); 
 
-  var ux = -1 * STEP_DISTANCE * fieldXY[1];
-  var uy =      STEP_DISTANCE * fieldXY[0];
+  var ux = -1 * STEP_DISTANCE * pixelRatio * fieldXY[1];
+  var uy =      STEP_DISTANCE * pixelRatio * fieldXY[0];
 
   var newX = x + ux;
   var newY = y + uy;
