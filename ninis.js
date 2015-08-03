@@ -102,7 +102,7 @@ function drawline(x1, y1, x2, y2, color) {
   ctx.lineTo(x2,y2);
   ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
   ctx.stroke();
-  ctx.drawImage(shadow, x2 - DELTA_SHADOW_X, y2 - DELTA_SHADOW_Y, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
+  ctx.drawImage(shadow, x2 - DELTA_SHADOW_X * pixelRatio, y2 - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
 }
 
 function getNewPosition(x, y, delta) {
@@ -158,8 +158,8 @@ function initAttractors() {
   var maxW =  1;
 
   var D = Math.max(dimX, dimY);
-  var minD = 8*D;
-  var maxD = 128*D;
+  var minD = 8 * D * pixelRatio;
+  var maxD = 128 * D * pixelRatio;
 
   for( var a = 0; a < NB_ATTRACTORS; a++) {
     var attractor = {};  
