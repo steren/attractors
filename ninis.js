@@ -159,7 +159,7 @@ function initAttractors() {
   var dimX = canvas.width;
   var dimY = canvas.height;
 
-  var minW = 0;
+  var minW = -1;
   var maxW =  1;
 
   var D = Math.max(dimX, dimY);
