@@ -4,47 +4,43 @@ var DELTA_SHADOW_X = 1;
 var DELTA_SHADOW_Y = 1;
 var NB_ATTRACTORS = 25;
 var NB_PARTICULES = 800;
-
 var STROKE_LINE_WIDTH = 0.4;
-
 // Distance to move the points at each frame.
 // We prefer using a constant distance per frame rather than defining a speed.
 // The speed would result in bad results on low framerate. 
 var STEP_DISTANCE = 1.5
+var COLORS = ['#DBCEC1', '#F7F6F5']
 
-var colors = ['#DBCEC1', '#F7F6F5']
 
 var canvas, ctx;
 var shadow;
 var pixelRatio;
 var colorSize;
 
-var G = 100;
-var mCursor = 100
+var pointsX;
+var pointsY;
 
-var speed = 1000 / (100 * 1000 * 1000);
-
-var mouseX = 0, mouseY = 0;
-
-var pointsX = [];
-var pointsY = [];
-
-var attractors = [];
+var attractors;
 
 init();
 animate();
+window.addEventListener( 'resize', init, false );
 
 function init() {
+  // initialize globals
+  pointsX = [];
+  pointsY = [];
+  attractors = [];
 
   pixelRatio = window.devicePixelRatio || 1;
+  
   canvas = document.getElementById("paint-canvas");
   ctx = canvas.getContext("2d");
 
   shadow = new Image();
   shadow.src = SHADOW_IMAGE + SIZE_SHADOW + 'px.png';
-  // TODO: use data:url?
-
-  resizeCanvasesToWindow();
+  
+  resizeCanvasToWindow();
 
   initAttractors();
 
@@ -53,30 +49,16 @@ function init() {
     pointsY.push(Math.random() * canvas.height);
   }
 
-  colorSize = Math.floor(pointsX.length / colors.length);
-
+  colorSize = Math.floor(pointsX.length / COLORS.length);
   ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
-
-  document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-  window.addEventListener( 'resize', onWindowResize, false );
 }
 
-function resizeCanvasesToWindow() { 
+function resizeCanvasToWindow() { 
   canvas.width = window.innerWidth * pixelRatio;
   canvas.height = window.innerHeight * pixelRatio;
   canvas.style.width = window.innerWidth + 'px';
   canvas.style.height = window.innerHeight + 'px';
 }
-
-function onWindowResize() {
-  resizeCanvasesToWindow();
-}
-
-function onDocumentMouseMove(event) {
-  mouseX = event.clientX
-  mouseY = event.clientY;
-}
-
 
 function animate(timestamp) {
   requestAnimationFrame( animate );
@@ -87,9 +69,9 @@ function render(timestamp) {
   // cut the number of points per number of color, and paint all of the same color at once:
   // start a path and add each segment to it, and only then, paint it. 
   // This increases performances instead of painting each segment after the other.
-  for(var c = 0; c < colors.length; c++) {
+  for(var c = 0; c < COLORS.length; c++) {
     ctx.beginPath();
-    ctx.strokeStyle = colors[c];
+    ctx.strokeStyle = COLORS[c];
     for (var i = c * colorSize; i < (c+1) * colorSize; i++ ) {
       var oldX = pointsX[i];
       var oldY = pointsY[i];
