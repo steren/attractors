@@ -135,11 +135,30 @@ function field(x, y) {
 
 function initPoints() {
   var nbParticules = PARTICULE_DENSITY * canvasScreenWidth * canvasScreenHeight / 1000000
+  //initPointsSquare(nbParticules, 4/5);
+  //initPointsSquare(nbParticules, 1);
+  initPointsGausian(nbParticules);
+}
+
+/** @param sizeRatio: the size of the square where points wil be created */
+function initPointsSquare(nbParticules, sizeRatio) {
   for(var i = 0; i < nbParticules; i++) {
-    pointsX.push(Math.random() * canvasRealWidth);
-    pointsY.push(Math.random() * canvasRealHeight);
+    pointsX.push(Math.random() * canvasRealWidth * sizeRatio + canvasRealWidth * ( 1 - sizeRatio) / 2 );
+    pointsY.push(Math.random() * canvasRealHeight * sizeRatio + canvasRealHeight * ( 1 - sizeRatio) / 2);
   }
 }
+
+function initPointsGausian(nbParticules) {
+  function normalRand() {
+    return ((Math.random() + Math.random() + Math.random() + Math.random() + Math.random() + Math.random()) - 3) / 3;
+  }
+  for(var i = 0; i < nbParticules; i++) {
+    pointsX.push( normalRand() * canvasRealWidth + canvasRealWidth / 2 );
+    pointsY.push( normalRand() * canvasRealHeight + canvasRealHeight / 2 );
+  }
+}
+
+
 
 function initAttractors() {
   var minW = -1;
