@@ -3,10 +3,12 @@ var SHADOW_IMAGE = 'shadow-o02-ellipse-'
 var DELTA_SHADOW_X = 1;
 var DELTA_SHADOW_Y = 1;
 var NB_ATTRACTORS = 25;
-var NB_PARTICULES = 800;
+/** number of particule for a square of 1000 * 1000 pixels */ 
+var PARTICULE_DENSITY = 800;
+
 var STROKE_LINE_WIDTH = 0.4;
-// Distance to move the points at each frame.
-// We prefer using a constant distance per frame rather than defining a speed.
+/** Distance to move the points at each frame. */
+// Note: We prefer using a constant distance per frame rather than defining a speed.
 // The speed would result in bad results on low framerate. 
 var STEP_DISTANCE = 1.5
 var COLORS = ['#DBCEC1', '#F7F6F5']
@@ -17,8 +19,9 @@ var shadow;
 var pixelRatio;
 var colorSize;
 
-var pointsX;
-var pointsY;
+var pointsX, pointsY;
+var canvasScreenWidth, canvasScreenHeight;
+var canvasRealWidth, canvasRealHeight;
 
 var attractors;
 
@@ -33,7 +36,7 @@ function init() {
   attractors = [];
 
   pixelRatio = window.devicePixelRatio || 1;
-  
+
   canvas = document.getElementById("paint-canvas");
   ctx = canvas.getContext("2d");
 
@@ -42,22 +45,23 @@ function init() {
   
   resizeCanvasToWindow();
 
+  initPoints();
   initAttractors();
 
-  for(var i = 0; i < NB_PARTICULES; i++) {
-    pointsX.push(Math.random() * canvas.width);
-    pointsY.push(Math.random() * canvas.height);
-  }
-
-  colorSize = Math.floor(pointsX.length / COLORS.length);
+  colorSize = Math.ceil(pointsX.length / COLORS.length);
   ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
 }
 
 function resizeCanvasToWindow() { 
-  canvas.width = window.innerWidth * pixelRatio;
-  canvas.height = window.innerHeight * pixelRatio;
-  canvas.style.width = window.innerWidth + 'px';
-  canvas.style.height = window.innerHeight + 'px';
+  canvasScreenWidth = window.innerWidth;
+  canvasScreenHeight = window.innerHeight;
+  canvasRealWidth = canvasScreenWidth * pixelRatio;
+  canvasRealHeight = canvasScreenHeight * pixelRatio;
+
+  canvas.width = canvasRealWidth;
+  canvas.height = canvasRealHeight;
+  canvas.style.width = canvasScreenWidth + 'px';
+  canvas.style.height = canvasScreenHeight + 'px';
 }
 
 function animate(timestamp) {
@@ -72,7 +76,8 @@ function render(timestamp) {
   for(var c = 0; c < COLORS.length; c++) {
     ctx.beginPath();
     ctx.strokeStyle = COLORS[c];
-    for (var i = c * colorSize; i < (c+1) * colorSize; i++ ) {
+    var range = Math.min((c+1) * colorSize, pointsX.length);
+    for (var i = c * colorSize; i < range; i++ ) {
       var oldX = pointsX[i];
       var oldY = pointsY[i];
       var newPosition = getNewPosition(oldX, oldY);
@@ -129,23 +134,26 @@ function field(x, y) {
 }
 
 
-
+function initPoints() {
+  var nbParticules = PARTICULE_DENSITY * canvasScreenWidth * canvasScreenHeight / 1000000
+  for(var i = 0; i < nbParticules; i++) {
+    pointsX.push(Math.random() * canvas.width);
+    pointsY.push(Math.random() * canvas.height);
+  }
+}
 
 function initAttractors() {
-  var dimX = canvas.width;
-  var dimY = canvas.height;
-
   var minW = -1;
   var maxW =  1;
 
-  var D = Math.max(dimX, dimY);
+  var D = Math.max(canvasScreenWidth, canvasScreenHeight);
   var minD = 8 * D * pixelRatio;
   var maxD = 128 * D * pixelRatio;
 
   for( var a = 0; a < NB_ATTRACTORS; a++) {
     var attractor = {};  
-    attractor.x = Math.random() * (dimX - 1);
-    attractor.y = Math.random() * (dimY - 1);
+    attractor.x = Math.random() * (canvasScreenWidth - 1);
+    attractor.y = Math.random() * (canvasScreenHeight - 1);
     attractor.weight = Math.random() * (maxW - minW) + minW;
     attractor.radius = Math.random() * (maxD - minD) + minD;
     attractors.push(attractor);
