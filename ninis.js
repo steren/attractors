@@ -25,6 +25,9 @@ var canvasRealWidth, canvasRealHeight;
 
 var attractors;
 
+// scroll to get rid of address bar on mobile
+window.scrollTo(0,1);
+
 init();
 animate();
 window.addEventListener( 'resize', init, false );
