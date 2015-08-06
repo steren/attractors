@@ -30,7 +30,9 @@ window.scrollTo(0,1);
 
 init();
 animate();
+
 window.addEventListener( 'resize', init, false );
+document.body.addEventListener('click', init, true); 
 
 function init() {
   // initialize globals
