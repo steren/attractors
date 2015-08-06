@@ -4,6 +4,7 @@ var DELTA_SHADOW_X = 1;
 var DELTA_SHADOW_Y = 1;
 var NB_ATTRACTORS = 25;
 var NB_PARTICULES = 800;
+var NEW_SEED_CREATION_PROBABILITY = 0;
 
 var STROKE_LINE_WIDTH = 0.4;
 
@@ -27,6 +28,7 @@ var pointsX = [];
 var pointsY = [];
 
 var attractors = [];
+var textAttractors = [];
 
 var lastTime;
 
@@ -46,10 +48,13 @@ function init() {
   resizeCanvasesToWindow();
 
   initAttractors();
+  initTextAttractors();
 
+  var nParticuleAdded = 0;
   for(var i = 0; i < NB_PARTICULES; i++) {
-    pointsX.push(Math.random() * canvas.width);
-    pointsY.push(Math.random() * canvas.height);
+    var newSeed = getPositionOutsideOfTextAttract();
+    pointsX.push(newSeed[0]);
+    pointsY.push(newSeed[1]);
   }
 
   colorSize = Math.floor(pointsX.length / colors.length);
@@ -94,13 +99,20 @@ function render(timestamp) {
     ctx.beginPath();
     ctx.strokeStyle = colors[c];
     for (var i = c * colorSize; i < (c+1) * colorSize; i++ ) {
-      var oldX = pointsX[i];
-      var oldY = pointsY[i];
-      var newPosition = getNewPosition(oldX, oldY, delta);
-      ctx.moveTo(oldX,oldY);
-      ctx.lineTo(newPosition[0], newPosition[1]);
-      pointsX[i] = newPosition[0];
-      pointsY[i] = newPosition[1];
+      if( Math.random() < NEW_SEED_CREATION_PROBABILITY ) {
+        var newSeed = getPositionOutsideOfTextAttract();
+        pointsX[i] = newSeed[0];
+        pointsY[i] = newSeed[1];
+      }
+      else {
+        var oldX = pointsX[i];
+        var oldY = pointsY[i];
+        var newPosition = getNewPosition(oldX, oldY, delta);
+        ctx.moveTo(oldX,oldY);
+        ctx.lineTo(newPosition[0], newPosition[1]);
+        pointsX[i] = newPosition[0];
+        pointsY[i] = newPosition[1];
+      }
     }
     ctx.stroke();
   }
@@ -133,7 +145,7 @@ function getNewPosition(x, y, delta) {
 
 
 /**
- * Value of the field at a given point 
+ * Vector of the field at a given point 
  */
 function field(x, y) {
   var ux = 0;
@@ -153,6 +165,26 @@ function field(x, y) {
   var norm = Math.sqrt(ux*ux + uy * uy);
   ux = ux / norm;
   uy = uy / norm;
+
+  // Text contribution
+  var closestAttractorInfo = findClosestTextAttractor(x,y);
+  var index = closestAttractorInfo.index;
+
+  var textAttractor = textAttractors[index];
+
+  var textUx = (x - textAttractor.x);
+  var textUy = (y - textAttractor.y);
+
+  var norm = Math.sqrt(textUx*textUx + textUy*textUy);
+  textUx = textUx / norm;
+  textUy = textUy / norm;
+
+  // Combine fields
+  var D = Math.max(canvas.width, canvas.height);
+  textWeight = Math.exp( -1 * Math.pow(closestAttractorInfo.distance,2) /  (4*D) );
+
+  ux = (1-textWeight)*ux + textWeight * textUx;
+  uy = (1-textWeight)*uy + textWeight * textUy;
 
   return [ux, uy];
 }
@@ -178,5 +210,102 @@ function initAttractors() {
     attractor.weight = Math.random() * (maxW - minW) + minW;
     attractor.radius = Math.random() * (maxD - minD) + minD;
     attractors.push(attractor);
+  }
+}
+
+
+
+function initTextAttractors() {
+  var dimX = canvas.width;
+  var dimY = canvas.height;
+
+  var D = Math.max(dimX, dimY);
+  var minD = 8 * D * pixelRatio;
+  var maxD = 128 * D * pixelRatio;
+
+  var minW = -1;
+  var maxW =  1;
+
+  for( var a = 0; a < 2; a++) {
+      var attractor = {};  
+      attractor.x = dimX/2 + 100*a;
+      attractor.y = dimY/2 + 100*a;
+      attractor.radius = (a+1)*100;
+      attractor.weight = 1;
+      textAttractors.push(attractor);
+      //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
+  }
+      attractor = {};  
+      attractor.x = dimX/2 - 100;
+      attractor.y = dimY/2 -300;
+      attractor.radius = 50;
+      attractor.weight = 1;
+      textAttractors.push(attractor);
+      //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
+}
+
+
+
+function drawHelperCircle(centerX, centerY, radius) {
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+  ctx.fillStyle = 'green';
+  ctx.fill();
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = '#003300';
+  ctx.stroke();
+} 
+
+
+function findClosestTextAttractor(x,y) {
+  var nTextAttractor = textAttractors.length;
+  var deltaMin = 0;
+  var dMin = 0;
+  var closerAttractor = 0;
+  for(var a=0; a<nTextAttractor; a++) {
+    var textAttractor = textAttractors[a];
+    var d2 = Math.pow(x-textAttractor.x, 2) + Math.pow(y-textAttractor.y, 2); 
+    var d = Math.sqrt(d2);
+    if(a==0) {
+      deltaMin = d-textAttractor.radius;
+      closerAttractor = a;
+    }
+    else {
+      if((d-textAttractor.radius)<deltaMin) {
+        deltaMin = d-textAttractor.radius;
+        closerAttractor = a;
+      }
+    }
+  }
+  return {
+    distance: deltaMin,
+    index: closerAttractor
+  }
+}
+
+
+
+function isInTextAttractor(x,y) {
+  var nTextAttractor = textAttractors.length;
+  for(var a=0; a<nTextAttractor; a++) {
+    var textAttractor = textAttractors[a];
+    var d2 = Math.pow(x-textAttractor.x, 2) + Math.pow(y-textAttractor.y, 2); 
+    var d = Math.sqrt(d2);
+    if(d<textAttractor.radius) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+
+function getPositionOutsideOfTextAttract() {
+  while(true) {
+    var x = Math.random() * canvas.width;
+    var y = Math.random() * canvas.height;
+    if(!isInTextAttractor(x,y)) {
+      return [x, y];
+    }
   }
 }
