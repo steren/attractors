@@ -15,7 +15,7 @@ var COLORS = ['#DBCEC1', '#F7F6F5']
 
 var TEXT = '13 AOUT 2016';
 var TEXT_ATTRACTOR_RADIUS = 0;
-var FONT = 'Codystar/CodyStar-Regular.ttf';
+var FONT = 'Codystar/Codystar-Regular.ttf';
 //var FONT = 'Fredoka_One/FredokaOne-Regular.ttf';
 
 var canvas, ctx;
