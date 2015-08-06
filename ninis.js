@@ -4,16 +4,19 @@ var DELTA_SHADOW_X = 1;
 var DELTA_SHADOW_Y = 1;
 var NB_ATTRACTORS = 25;
 var NEW_SEED_CREATION_PROBABILITY = 0;
-/** number of particule for a square of 1000 * 1000 pixels */ 
+/** number of particule for a square of 1000 * 1000 pixels */
 var PARTICULE_DENSITY = 800;
-
 var STROKE_LINE_WIDTH = 0.4;
 /** Distance to move the points at each frame. */
 // Note: We prefer using a constant distance per frame rather than defining a speed.
-// The speed would result in bad results on low framerate. 
+// The speed would result in bad results on low framerate.
 var STEP_DISTANCE = 1.5
 var COLORS = ['#DBCEC1', '#F7F6F5']
 
+var TEXT = '13 AOUT 2016';
+var TEXT_ATTRACTOR_RADIUS = 0;
+var FONT = 'Codystar/CodyStar-Regular.ttf';
+//var FONT = 'Fredoka_One/FredokaOne-Regular.ttf';
 
 var canvas, ctx;
 var shadow;
@@ -27,14 +30,20 @@ var canvasRealWidth, canvasRealHeight;
 var attractors;
 var textAttractors = [];
 
+var loadedFont;
+
 // scroll to get rid of address bar on mobile
 window.scrollTo(0,1);
 
-init();
-animate();
+opentype.load('fonts/' + FONT, function(err, font) {
+  console.log(font);
+  loadedFont = font;
+  init();
+  animate();
+});
 
 window.addEventListener( 'resize', init, false );
-document.body.addEventListener('click', init, true); 
+document.body.addEventListener('click', init, true);
 
 function init() {
   // initialize globals
@@ -49,18 +58,18 @@ function init() {
 
   shadow = new Image();
   shadow.src = SHADOW_IMAGE + SIZE_SHADOW + 'px.png';
-  
+
   resizeCanvasToWindow();
 
   initAttractors();
-  initTextAttractors();
+  initTextAttractors(TEXT);
   initPoints();
 
   colorSize = Math.ceil(pointsX.length / COLORS.length);
   ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
 }
 
-function resizeCanvasToWindow() { 
+function resizeCanvasToWindow() {
   canvasScreenWidth = window.innerWidth;
   canvasScreenHeight = window.innerHeight;
   canvasRealWidth = canvasScreenWidth * pixelRatio;
@@ -79,14 +88,14 @@ function animate(timestamp) {
 
 function render(timestamp) {
   // cut the number of points per number of color, and paint all of the same color at once:
-  // start a path and add each segment to it, and only then, paint it. 
+  // start a path and add each segment to it, and only then, paint it.
   // This increases performances instead of painting each segment after the other.
   for(var c = 0; c < COLORS.length; c++) {
     ctx.beginPath();
     ctx.strokeStyle = COLORS[c];
     for (var i = c * colorSize; i < (c+1) * colorSize; i++ ) {
       if( Math.random() < NEW_SEED_CREATION_PROBABILITY ) {
-        var newSeed = getPositionOutsideOfTextAttractor();
+        var newSeed = getPositionOutsideOfTextAttractorGaussian();
         pointsX[i] = newSeed[0];
         pointsY[i] = newSeed[1];
       }
@@ -110,7 +119,7 @@ function render(timestamp) {
 }
 
 function getNewPosition(x, y) {
-  var fieldXY = field(x,y); 
+  var fieldXY = field(x,y);
 
   var ux = -1 * STEP_DISTANCE * pixelRatio * fieldXY[1];
   var uy =      STEP_DISTANCE * pixelRatio * fieldXY[0];
@@ -123,7 +132,7 @@ function getNewPosition(x, y) {
 
 
 /**
- * Vector of the field at a given point 
+ * Vector of the field at a given point
  */
 function field(x, y) {
   var ux = 0;
@@ -199,7 +208,7 @@ function initAttractors() {
   var maxD = 128 * D * pixelRatio;
 
   for( var a = 0; a < NB_ATTRACTORS; a++) {
-    var attractor = {};  
+    var attractor = {};
     attractor.x = Math.random() * (canvasRealWidth - 1);
     attractor.y = Math.random() * (canvasRealHeight - 1);
     attractor.weight = Math.random() * (maxW - minW) + minW;
@@ -208,36 +217,28 @@ function initAttractors() {
   }
 }
 
-
-
-function initTextAttractors() {
+function initTextAttractors(text) {
   textAttractors = [];
-  var dimX = canvas.width;
-  var dimY = canvas.height;
 
-  var D = Math.max(dimX, dimY);
-  var minD = 8 * D * pixelRatio;
-  var maxD = 128 * D * pixelRatio;
+  var textx = 200;
+  var texty = 500;
+  var fontSize = 150;
 
-  var minW = -1;
-  var maxW =  1;
+  var path = loadedFont.getPath(text, textx, texty, fontSize);
+  console.log(path);
 
-  for( var a = 0; a < 2; a++) {
-      var attractor = {};  
-      attractor.x = dimX/2 + 100*a;
-      attractor.y = dimY/2 + 100*a;
-      attractor.radius = (a+1)*100;
-      attractor.weight = 1;
+  //path.draw(ctx);
+  for( var c = 0; c < path.commands.length; c++) {
+      var command = path.commands[c];
+
+      var attractor = {};
+      attractor.x = command.x;
+      attractor.y = command.y;
+      attractor.radius = TEXT_ATTRACTOR_RADIUS;
       textAttractors.push(attractor);
       //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
   }
-      attractor = {};  
-      attractor.x = dimX/2 - 100;
-      attractor.y = dimY/2 -300;
-      attractor.radius = 50;
-      attractor.weight = 1;
-      textAttractors.push(attractor);
-      //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
+
 }
 
 
@@ -250,7 +251,7 @@ function drawHelperCircle(centerX, centerY, radius) {
   ctx.lineWidth = 5;
   ctx.strokeStyle = '#003300';
   ctx.stroke();
-} 
+}
 
 
 function findClosestTextAttractor(x,y) {
@@ -260,7 +261,7 @@ function findClosestTextAttractor(x,y) {
   var closerAttractor = 0;
   for(var a=0; a<nTextAttractor; a++) {
     var textAttractor = textAttractors[a];
-    var d2 = Math.pow(x-textAttractor.x, 2) + Math.pow(y-textAttractor.y, 2); 
+    var d2 = Math.pow(x-textAttractor.x, 2) + Math.pow(y-textAttractor.y, 2);
     var d = Math.sqrt(d2);
     if(a==0) {
       deltaMin = d-textAttractor.radius;
@@ -285,7 +286,7 @@ function isInTextAttractor(x,y) {
   var nTextAttractor = textAttractors.length;
   for(var a=0; a<nTextAttractor; a++) {
     var textAttractor = textAttractors[a];
-    var d2 = Math.pow(x-textAttractor.x, 2) + Math.pow(y-textAttractor.y, 2); 
+    var d2 = Math.pow(x-textAttractor.x, 2) + Math.pow(y-textAttractor.y, 2);
     var d = Math.sqrt(d2);
     if(d<textAttractor.radius) {
       return true;
