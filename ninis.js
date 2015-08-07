@@ -32,9 +32,6 @@ var textAttractors = [];
 
 var loadedFont;
 
-// scroll to get rid of address bar on mobile
-window.scrollTo(0,1);
-
 opentype.load('fonts/' + FONT, function(err, font) {
   console.log(font);
   loadedFont = font;
