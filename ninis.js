@@ -10,8 +10,9 @@ var STROKE_LINE_WIDTH = 0.4;
 /** Distance to move the points at each frame. */
 // Note: We prefer using a constant distance per frame rather than defining a speed.
 // The speed would result in bad results on low framerate.
-var STEP_DISTANCE = 1.5
-var COLORS = ['#DBCEC1', '#F7F6F5']
+var STEP_DISTANCE = 1.5;
+var COLORS = ['#DBCEC1', '#F7F6F5'];
+var BACKGROUND_COLOR = '#57A3BD';
 
 var TEXT = '13 / 8 / 2016';
 var TEXT_ATTRACTOR_RADIUS = 0;
@@ -53,12 +54,14 @@ function init() {
   pixelRatio = window.devicePixelRatio || 1;
 
   canvas = document.getElementById("paint-canvas");
-  ctx = canvas.getContext("2d");
+  ctx = canvas.getContext("2d", {alpha : false});
 
   shadow = new Image();
   shadow.src = SHADOW_IMAGE + SIZE_SHADOW + 'px.png';
 
   resizeCanvasToWindow();
+
+  paintCanvasWithBackground();
 
   initAttractors();
   initTextAttractors(TEXT);
@@ -78,6 +81,11 @@ function resizeCanvasToWindow() {
   canvas.height = canvasRealHeight;
   canvas.style.width = canvasScreenWidth + 'px';
   canvas.style.height = canvasScreenHeight + 'px';
+}
+
+function paintCanvasWithBackground() {
+  ctx.fillStyle = BACKGROUND_COLOR;
+  ctx.fillRect(0, 0, canvasRealWidth, canvasRealHeight);
 }
 
 function animate(timestamp) {
