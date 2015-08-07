@@ -13,9 +13,11 @@ var STROKE_LINE_WIDTH = 0.4;
 var STEP_DISTANCE = 1.5
 var COLORS = ['#DBCEC1', '#F7F6F5']
 
-var TEXT = '13 AOUT 2016';
+var TEXT = '13 / 8 / 2016';
 var TEXT_ATTRACTOR_RADIUS = 0;
-var FONT = 'Codystar/Codystar-Regular.ttf';
+
+var FONT = 'CamBam/1CamBam_Stick_2.ttf';
+//var FONT = 'Codystar/Codystar-Regular.ttf';
 //var FONT = 'Fredoka_One/FredokaOne-Regular.ttf';
 
 var canvas, ctx;
@@ -225,6 +227,8 @@ function initTextAttractors(text) {
   console.log(path);
 
   //path.draw(ctx);
+  //loadedFont.drawPoints(ctx, text, textx, texty, fontSize);
+
   for( var c = 0; c < path.commands.length; c++) {
       var command = path.commands[c];
 
