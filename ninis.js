@@ -15,6 +15,7 @@ var COLORS = ['#DBCEC1', '#F7F6F5'];
 var BACKGROUND_COLOR = '#57A3BD';
 
 var TEXT = '13 / 8 / 2016';
+var TEXT__FONT_SIZE_SCREEN_WIDTH_RATIO = 12;
 var TEXT_ATTRACTOR_RADIUS = 0;
 
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
@@ -227,27 +228,36 @@ function initAttractors() {
 function initTextAttractors(text) {
   textAttractors = [];
 
-  var textx = 200;
-  var texty = 500;
-  var fontSize = 150;
+  var textTopLeft = {x: Infinity, y: Infinity};
+  var textBottomRight = {x: -Infinity, y: -Infinity};
+  var fontSize = canvasRealWidth / TEXT__FONT_SIZE_SCREEN_WIDTH_RATIO;
 
-  var path = loadedFont.getPath(text, textx, texty, fontSize);
-  console.log(path);
+  // measure the size of a single character
+  var path = loadedFont.getPath(text, 0, 0, fontSize * devicePixelRatio);
 
-  //path.draw(ctx);
-  //loadedFont.drawPoints(ctx, text, textx, texty, fontSize);
-
+  // get the bounding box of the text path
+  for( var c = 0; c < path.commands.length; c++) {
+    if (path.commands[c].x < textTopLeft.x) {textTopLeft.x = path.commands[c].x};
+    if (path.commands[c].y < textTopLeft.y) {textTopLeft.y = path.commands[c].y};
+    if (path.commands[c].x > textBottomRight.x) {textBottomRight.x = path.commands[c].x};
+    if (path.commands[c].y > textBottomRight.y) {textBottomRight.y = path.commands[c].y};
+  }
+  var textWidth = textBottomRight.x - textTopLeft.x;
+  var textHeight = textBottomRight.y - textTopLeft.y;
+  var textX = canvasRealWidth / 2 - textWidth / 2;
+  var textY = canvasRealHeight / 2 + textHeight / 2;
+  
   for( var c = 0; c < path.commands.length; c++) {
       var command = path.commands[c];
-
       var attractor = {};
-      attractor.x = command.x;
-      attractor.y = command.y;
+      attractor.x = textX + command.x;
+      attractor.y = textY + command.y;
       attractor.radius = TEXT_ATTRACTOR_RADIUS;
       textAttractors.push(attractor);
       //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
   }
 
+  //loadedFont.drawPoints(ctx, text, textX, textY, fontSize * devicePixelRatio);
 }
 
 
