@@ -233,7 +233,7 @@ function initTextAttractors(text) {
   var fontSize = canvasRealWidth / TEXT__FONT_SIZE_SCREEN_WIDTH_RATIO;
 
   // measure the size of a single character
-  var path = loadedFont.getPath(text, 0, 0, fontSize * devicePixelRatio);
+  var path = loadedFont.getPath(text, 0, 0, fontSize);
 
   // get the bounding box of the text path
   for( var c = 0; c < path.commands.length; c++) {
