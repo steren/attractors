@@ -193,8 +193,8 @@ function field(x, y) {
 
 function initPoints() {
   // for a device with higher pixel ratio, put more particules. 
-  // but do not put devicePixelRatio * devicePixelRatio more particules for performances reasons
-  var nbParticules = devicePixelRatio * PARTICULE_DENSITY * canvasScreenWidth * canvasScreenHeight / 1000000
+  // but do not put pixelRatio * pixelRatio more particules for performances reasons
+  var nbParticules = pixelRatio * PARTICULE_DENSITY * canvasScreenWidth * canvasScreenHeight / 1000000
   for(var i = 0; i < nbParticules; i++) {
     //var newSeed = getPositionOutsideOfTextAttractorSquare(4/5);
     var newSeed = getPositionOutsideOfTextAttractorGaussian();
@@ -323,7 +323,7 @@ function initTextAttractors(text) {
   }
 
   //console.log(path);
-  //loadedFont.drawPoints(ctx, text, textX, textY, fontSize * devicePixelRatio);
+  //loadedFont.drawPoints(ctx, text, textX, textY, fontSize * pixelRatio);
 }
 
 
