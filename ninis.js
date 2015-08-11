@@ -16,6 +16,8 @@ var BACKGROUND_COLOR = '#57A3BD';
 var MESSAGE_APPEARANCE_DELAY = 8 * 1000;
 var TEXT = '13 . 8 . 2016';
 var TEXT__FONT_SIZE_SCREEN_WIDTH_RATIO = 12;
+var TEXT_X_POSITION_PERCENT = 50;
+var TEXT_Y_POSITION_PERCENT = 33;
 var TEXT_ATTRACTOR_RADIUS = 1;
 
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
@@ -248,8 +250,8 @@ function initTextAttractors(text) {
   }
   var textWidth = textBottomRight.x - textTopLeft.x;
   var textHeight = textBottomRight.y - textTopLeft.y;
-  var textX = canvasRealWidth / 2 - textWidth / 2;
-  var textY = canvasRealHeight / 2 + textHeight / 2;
+  var textX = canvasRealWidth * TEXT_X_POSITION_PERCENT / 100 - textWidth / 2;
+  var textY = canvasRealHeight * TEXT_Y_POSITION_PERCENT / 100 + textHeight / 2;
   
   for( var c = 0; c < (path.commands.length-1); c++) {
       var command2 = path.commands[c+1];
@@ -266,7 +268,7 @@ function initTextAttractors(text) {
       //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
   }
 
-
+  //console.log(path);
   //loadedFont.drawPoints(ctx, text, textX, textY, fontSize * devicePixelRatio);
 }
 
