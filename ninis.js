@@ -14,6 +14,8 @@ var STEP_DISTANCE = 1.5;
 var COLORS = ['#DBCEC1', '#F7F6F5'];
 var BACKGROUND_COLOR = '#57A3BD';
 
+var MESSAGE_APPEARANCE_DELAY = 8 * 1000;
+
 var TEXT = '13 / 8 / 2016';
 var TEXT__FONT_SIZE_SCREEN_WIDTH_RATIO = 12;
 var TEXT_ATTRACTOR_RADIUS = 0;
@@ -43,6 +45,8 @@ opentype.load('fonts/' + FONT, function(err, font) {
   animate();
 });
 
+window.setTimeout(displayMessage, MESSAGE_APPEARANCE_DELAY);
+
 window.addEventListener( 'resize', init, false );
 document.body.addEventListener('click', init, true);
 
@@ -70,6 +74,11 @@ function init() {
 
   colorSize = Math.ceil(pointsX.length / COLORS.length);
   ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
+}
+
+function displayMessage() {
+  var message = document.getElementById('message');
+  message.className = 'visible'; 
 }
 
 function resizeCanvasToWindow() {

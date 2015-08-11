@@ -5,15 +5,57 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
   	<meta name="theme-color" content="#57A3BD">
+
+	<link href='http://fonts.googleapis.com/css?family=Poiret+One' rel='stylesheet' type='text/css'>
 	<style>
 		body {
 			background-color: #57A3BD;
 			margin: 0px;
 			overflow: hidden;
 		}
+		#message {
+			position: absolute;
+			bottom: 0;
+			right: 0;
+			left: 0;
+			padding-top: 3em;
+			padding-bottom: 1em;
+			color: #252A2B;
+			font-size: 2vw; /* 2% of viewport width */
+			font-weight: 400;
+			font-family: 'Poiret One', cursive;
+			text-align: center;
+			background: linear-gradient(to top, rgb(87, 163, 189), rgba(87, 163, 189, 0));
+			transition: opacity 20s;
+			opacity: 0;
+			-moz-user-select: none;
+			-webkit-user-select: none;
+			-ms-user-select: none;
+		}
+		#message.visible {
+			opacity: 1;
+		}
+		#message .larger {
+			font-size: 1.7em;
+		}
+		#message p {
+			margin: 0.2em;
+		}
+
+		@media (orientation:portrait) {
+			#message {
+				font-size: 4vw;
+			}
+		}
+
 	</style>
 </head>
 <body>
+	<div id="message">
+		<p class="larger">Anne & Steren</p>
+		<p>Nancy</p>
+	</div>
+
 	<canvas id="paint-canvas"></canvas>
 	
 	<script src="/lib/opentype.js"></script>
