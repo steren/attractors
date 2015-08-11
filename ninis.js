@@ -13,12 +13,10 @@ var STROKE_LINE_WIDTH = 0.4;
 var STEP_DISTANCE = 1.5;
 var COLORS = ['#DBCEC1', '#F7F6F5'];
 var BACKGROUND_COLOR = '#57A3BD';
-
 var MESSAGE_APPEARANCE_DELAY = 8 * 1000;
-
-var TEXT = '13 / 8 / 2016';
+var TEXT = '13 . 8 . 2016';
 var TEXT__FONT_SIZE_SCREEN_WIDTH_RATIO = 12;
-var TEXT_ATTRACTOR_RADIUS = 0;
+var TEXT_ATTRACTOR_RADIUS = 1;
 
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
 //var FONT = 'Codystar/Codystar-Regular.ttf';
@@ -170,14 +168,11 @@ function field(x, y) {
   ux = ux / norm;
   uy = uy / norm;
 
-  // Text contribution
-  var closestAttractorInfo = findClosestTextAttractor(x,y);
-  var index = closestAttractorInfo.index;
+    // Text contribution for segmentTextAttractor
+  var closestTextPoint = findClosestTextPoint(x,y);
 
-  var textAttractor = textAttractors[index];
-
-  var textUx = (x - textAttractor.x);
-  var textUy = (y - textAttractor.y);
+  var textUx = (x - closestTextPoint.originX);
+  var textUy = (y - closestTextPoint.originY);
 
   var norm = Math.sqrt(textUx*textUx + textUy*textUy);
   textUx = textUx / norm;
@@ -185,7 +180,7 @@ function field(x, y) {
 
   // Combine fields
   var D = Math.max(canvas.width, canvas.height);
-  textWeight = Math.exp( -1 * Math.pow(closestAttractorInfo.distance,2) /  (4*D) );
+  textWeight = Math.exp( -1 * Math.pow(closestTextPoint.distance,2) /  (4*D) );
 
   ux = (1-textWeight)*ux + textWeight * textUx;
   uy = (1-textWeight)*uy + textWeight * textUy;
@@ -256,15 +251,21 @@ function initTextAttractors(text) {
   var textX = canvasRealWidth / 2 - textWidth / 2;
   var textY = canvasRealHeight / 2 + textHeight / 2;
   
-  for( var c = 0; c < path.commands.length; c++) {
-      var command = path.commands[c];
-      var attractor = {};
-      attractor.x = textX + command.x;
-      attractor.y = textY + command.y;
-      attractor.radius = TEXT_ATTRACTOR_RADIUS;
-      textAttractors.push(attractor);
+  for( var c = 0; c < (path.commands.length-1); c++) {
+      var command2 = path.commands[c+1];
+      if(command2.type!="M") {
+        var command1 = path.commands[c];
+        var attractor = {};
+        attractor.x1 = textX + command1.x;
+        attractor.y1 = textY + command1.y;
+        attractor.x2 = textX + command2.x;
+        attractor.y2 = textY + command2.y;
+        attractor.radius = TEXT_ATTRACTOR_RADIUS;
+        textAttractors.push(attractor);
+      }
       //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
   }
+
 
   //loadedFont.drawPoints(ctx, text, textX, textY, fontSize * devicePixelRatio);
 }
@@ -282,29 +283,32 @@ function drawHelperCircle(centerX, centerY, radius) {
 }
 
 
-function findClosestTextAttractor(x,y) {
+function findClosestTextPoint(x,y) {
   var nTextAttractor = textAttractors.length;
   var deltaMin = 0;
   var dMin = 0;
-  var closerAttractor = 0;
+  var ox = 0;
+  var oy = 0;
   for(var a=0; a<nTextAttractor; a++) {
     var textAttractor = textAttractors[a];
-    var d2 = Math.pow(x-textAttractor.x, 2) + Math.pow(y-textAttractor.y, 2);
-    var d = Math.sqrt(d2);
+    var closestSegmentPoint = distanceToSegment(textAttractor, x, y);
     if(a==0) {
-      deltaMin = d-textAttractor.radius;
-      closerAttractor = a;
+      deltaMin = closestSegmentPoint.distance-textAttractor.radius;
+      ox = closestSegmentPoint.originX;
+      oy = closestSegmentPoint.originY;
     }
     else {
-      if((d-textAttractor.radius)<deltaMin) {
-        deltaMin = d-textAttractor.radius;
-        closerAttractor = a;
+      if((closestSegmentPoint.distance-textAttractor.radius)<deltaMin) {
+        deltaMin = closestSegmentPoint.distance-textAttractor.radius;
+        ox = closestSegmentPoint.originX;
+        oy = closestSegmentPoint.originY;
       }
     }
   }
   return {
     distance: deltaMin,
-    index: closerAttractor
+    originX: ox,
+    originY: oy
   }
 }
 
@@ -342,5 +346,40 @@ function getPositionOutsideOfTextAttractorGaussian() {
     if(!isInTextAttractor(x,y)) {
       return [x, y];
     }
+  }
+}
+
+
+function distanceToSegment(segment, x, y) {
+  var x1 = segment.x1;
+  var x2 = segment.x2;
+  var y1 = segment.y1;
+  var y2 = segment.y2;
+  var l = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
+  var d = ((x-x1)*(x2-x1) + (y-y1)*(y2-y1)) / l;
+  var distanceToSegment = 0;
+  var ox = 0;
+  var oy = 0;
+  if(d>l) {
+    distanceToSegment = Math.sqrt(Math.pow(x2-x, 2) + Math.pow(y2-y, 2));
+    ox = x2;
+    oy = y2;
+  }
+  else {
+    if(d<0) {
+      distanceToSegment = Math.sqrt(Math.pow(x1-x, 2) + Math.pow(y1-y, 2));
+      ox = x1;
+      oy = y1;
+    }
+    else {
+      ox = x1 + (x2-x1)*d/l;
+      oy = y1 + (y2-y1)*d/l;
+      distanceToSegment = Math.sqrt(Math.pow(ox-x, 2) + Math.pow(oy-y, 2));
+    }
+  }
+  return {
+    distance: distanceToSegment,
+    originX: ox,
+    originY: oy
   }
 }
