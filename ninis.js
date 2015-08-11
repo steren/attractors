@@ -192,8 +192,9 @@ function field(x, y) {
 }
 
 function initPoints() {
-  // we use real canvas size, and not sceen canvas size because devices with higher pixel ratio
-  var nbParticules = PARTICULE_DENSITY * canvasRealWidth * canvasRealHeight / 1000000
+  // for a device with higher pixel ratio, put more particules. 
+  // but do not put devicePixelRatio * devicePixelRatio more particules for performances reasons
+  var nbParticules = devicePixelRatio * PARTICULE_DENSITY * canvasScreenWidth * canvasScreenHeight / 1000000
   for(var i = 0; i < nbParticules; i++) {
     //var newSeed = getPositionOutsideOfTextAttractorSquare(4/5);
     var newSeed = getPositionOutsideOfTextAttractorGaussian();
