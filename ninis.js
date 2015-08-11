@@ -10,7 +10,7 @@ var STROKE_LINE_WIDTH = 0.4;
 /** Distance to move the points at each frame. */
 // Note: We prefer using a constant distance per frame rather than defining a speed.
 // The speed would result in bad results on low framerate.
-var STEP_DISTANCE = 1.5;
+var STEP_DISTANCE = 1;
 var COLORS = ['#DBCEC1', '#F7F6F5'];
 var BACKGROUND_COLOR = '#57A3BD';
 var MESSAGE_APPEARANCE_DELAY = 8 * 1000;
@@ -191,7 +191,8 @@ function field(x, y) {
 }
 
 function initPoints() {
-  var nbParticules = PARTICULE_DENSITY * canvasScreenWidth * canvasScreenHeight / 1000000
+  // we use real canvas size, and not sceen canvas size because devices with higher pixel ratio
+  var nbParticules = PARTICULE_DENSITY * canvasRealWidth * canvasRealHeight / 1000000
   for(var i = 0; i < nbParticules; i++) {
     //var newSeed = getPositionOutsideOfTextAttractorSquare(4/5);
     var newSeed = getPositionOutsideOfTextAttractorGaussian();
