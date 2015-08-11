@@ -34,7 +34,7 @@ var canvasScreenWidth, canvasScreenHeight;
 var canvasRealWidth, canvasRealHeight;
 
 var attractors;
-var textAttractors = [];
+var textAttractors;
 
 var loadedFont;
 
@@ -55,6 +55,7 @@ function init() {
   pointsX = [];
   pointsY = [];
   attractors = [];
+  textAttractors = [];
 
   pixelRatio = window.devicePixelRatio || 1;
 
@@ -257,13 +258,64 @@ function initTextAttractors(text) {
       var command2 = path.commands[c+1];
       if(command2.type!="M") {
         var command1 = path.commands[c];
-        var attractor = {};
-        attractor.x1 = textX + command1.x;
-        attractor.y1 = textY + command1.y;
-        attractor.x2 = textX + command2.x;
-        attractor.y2 = textY + command2.y;
-        attractor.radius = TEXT_ATTRACTOR_RADIUS;
-        textAttractors.push(attractor);
+        if(command2.type=="L") {
+          var textAttractor = {};
+          textAttractor.x1 = textX + command1.x;
+          textAttractor.y1 = textY + command1.y;
+          textAttractor.x2 = textX + command2.x;
+          textAttractor.y2 = textY + command2.y;
+          textAttractor.radius = TEXT_ATTRACTOR_RADIUS;
+          textAttractors.push(textAttractor);
+        }
+        else {
+          if(command2.type=="Q"){
+            var textAttractor = {};
+            var t = 1/2;
+            textAttractor.x1 = textX + command1.x;
+            textAttractor.y1 = textY + command1.y;
+            textAttractor.x2 = textX + command1.x*Math.pow(1-t,2) + command2.x1*2*t*(1-t) + command2.x*Math.pow(t,2);
+            textAttractor.y2 = textY + command1.y*Math.pow(1-t,2) + command2.y1*2*t*(1-t) + command2.y*Math.pow(t,2);
+            textAttractor.radius = TEXT_ATTRACTOR_RADIUS;
+            textAttractors.push(textAttractor);
+            var textAttractor2 = {};
+            textAttractor2.x1 = textAttractor.x2;
+            textAttractor2.y1 = textAttractor.y2;
+            textAttractor2.x2 = textX + command2.x;
+            textAttractor2.y2 = textY + command2.y;
+            textAttractor2.radius = TEXT_ATTRACTOR_RADIUS;
+            textAttractors.push(textAttractor2);
+          }
+          else { //"C"
+            var textAttractor = {};
+            var t = 1/3;
+            textAttractor.x1 = textX + command1.x;
+            textAttractor.y1 = textY + command1.y;
+            textAttractor.x2 = textX + command1.x*Math.pow(1-t,3) + command2.x1*3*t*Math.pow(1-t,2) + command2.x2*3*Math.pow(t,2)*(1-t) + command2.x*Math.pow(t,3);
+            textAttractor.y2 = textY + command1.y*Math.pow(1-t,3) + command2.y1*3*t*Math.pow(1-t,2) + command2.y2*3*Math.pow(t,2)*(1-t) + command2.y*Math.pow(t,3);
+            textAttractor.radius = TEXT_ATTRACTOR_RADIUS;
+            textAttractors.push(textAttractor);
+            var textAttractor2 = {};
+            t = 2/3;
+            textAttractor2.x1 = textAttractor.x2;
+            textAttractor2.y1 = textAttractor.y2;
+            textAttractor2.x2 = textX + command1.x*Math.pow(1-t,3) + command2.x1*3*t*Math.pow(1-t,2) + command2.x2*3*Math.pow(t,2)*(1-t) + command2.x*Math.pow(t,3);
+            textAttractor2.y2 = textY + command1.y*Math.pow(1-t,3) + command2.y1*3*t*Math.pow(1-t,2) + command2.y2*3*Math.pow(t,2)*(1-t) + command2.y*Math.pow(t,3);
+            textAttractor2.radius = TEXT_ATTRACTOR_RADIUS;
+            textAttractors.push(textAttractor2);
+            var textAttractor3 = {};
+            textAttractor3.x1 = textAttractor2.x2;
+            textAttractor3.y1 = textAttractor2.y2;
+            textAttractor3.x2 = textX + command2.x;
+            textAttractor3.y2 = textY + command2.y;
+            textAttractor3.radius = TEXT_ATTRACTOR_RADIUS;
+            textAttractors.push(textAttractor3);
+          }
+        }
+
+//         if(Math.random>0.1) {
+//           pointsX.push(textX + command1.x+Math.random()-0.5);
+//           pointsY.push(textY + command1.y+Math.random()-0.5);
+//         }
       }
       //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
   }
