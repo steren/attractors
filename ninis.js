@@ -10,7 +10,7 @@ var STROKE_LINE_WIDTH = 0.4;
 /** Distance to move the points at each frame. */
 // Note: We prefer using a constant distance per frame rather than defining a speed.
 // The speed would result in bad results on low framerate.
-var STEP_DISTANCE = 1.5;
+var STEP_DISTANCE = 1;
 var COLORS = ['#DBCEC1', '#F7F6F5'];
 var BACKGROUND_COLOR = '#57A3BD';
 var MESSAGE_APPEARANCE_DELAY = 8 * 1000;
@@ -19,6 +19,8 @@ var TEXT_FONT_SIZE_SCREEN_WIDTH_RATIO = 12;
 var TEXT_X_POSITION_PERCENT = 50;
 var TEXT_Y_POSITION_PERCENT = 33;
 var TEXT_ATTRACTOR_RADIUS = 1;
+/** under this width, do not subdivise the quadratic and cubic bezier curves in the text's path */
+var TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
 var DEBUG_FLAG = false;
 
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
@@ -39,6 +41,11 @@ var textAttractors;
 
 var loadedFont;
 
+// characteristic distance of the image
+var D;
+
+var textTopLeft, textBottomRight;
+
 opentype.load('fonts/' + FONT, function(err, font) {
   console.log(font);
   loadedFont = font;
@@ -58,6 +65,9 @@ function init() {
   attractors = [];
   textAttractors = [];
 
+  textTopLeft = {};
+  textBottomRight = {};
+
   pixelRatio = window.devicePixelRatio || 1;
 
   canvas = document.getElementById("paint-canvas");
@@ -76,6 +86,8 @@ function init() {
 
   colorSize = Math.ceil(pointsX.length / COLORS.length);
   ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
+
+  D = Math.max(canvas.width, canvas.height);
 }
 
 function displayMessage() {
@@ -172,33 +184,44 @@ function field(x, y) {
   ux = ux / norm;
   uy = uy / norm;
 
-  // Text contribution for segmentTextAttractor
-  var closestTextPoint = findClosestTextPoint(x,y);
+  // If we are nead the text, add the text contribution to the field
+  if(true || isNearText(x,y)) {
+    var closestTextPoint = findClosestTextPoint(x,y);
+    var textUx = (x - closestTextPoint.originX);
+    var textUy = (y - closestTextPoint.originY);
+    var norm = Math.sqrt(textUx*textUx + textUy*textUy);
+    textUx = textUx / norm;
+    textUy = textUy / norm;
 
-  var textUx = (x - closestTextPoint.originX);
-  var textUy = (y - closestTextPoint.originY);
+    // Combine fields
+//     textWeight = Math.exp( -1 * Math.pow(closestTextPoint.distance,1) /  (0.25*D) );
+    textWeight = Math.exp( -1 * Math.pow(closestTextPoint.distance,2) /  (4*D) );
+    ux = (1-textWeight)*ux + textWeight * textUx;
+    uy = (1-textWeight)*uy + textWeight * textUy;
 
-  norm = Math.sqrt(textUx*textUx + textUy*textUy);
-  textUx = textUx / norm;
-  textUy = textUy / norm;
-
-  // Combine fields
-  var D = Math.max(canvas.width, canvas.height);
-  textWeight = Math.exp( -1 * Math.pow(closestTextPoint.distance,1) /  (0.25*D) );
-//     textWeight = Math.exp( -1 * Math.pow(closestTextPoint.distance,2) /  (4*D) );
-
-  ux = (1-textWeight)*ux + textWeight * textUx;
-  uy = (1-textWeight)*uy + textWeight * textUy;
-
-  norm = Math.sqrt(ux*ux + uy*uy);
-  ux = ux / norm;
-  uy = uy / norm;
+    norm = Math.sqrt(ux*ux + uy*uy);
+    ux = ux / norm;
+    uy = uy / norm;
+  }
 
   return [ux, uy];
 }
 
+function isNearText(x,y) {
+  var near = D/8;
+  if( x - (textTopLeft.x - near) > 0 
+  && x - (textBottomRight.x + near) < 0
+  && y - (textTopLeft.y - near) > 0 
+  && y - (textBottomRight.y + near) < 0) {
+    return true;
+  }
+  return false;
+}
+
 function initPoints() {
-  var nbParticules = PARTICULE_DENSITY * canvasScreenWidth * canvasScreenHeight / 1000000
+  // for a device with higher pixel ratio, put more particules. 
+  // but do not put pixelRatio * pixelRatio more particules for performances reasons
+  var nbParticules = pixelRatio * PARTICULE_DENSITY * canvasScreenWidth * canvasScreenHeight / 1000000
   for(var i = 0; i < nbParticules; i++) {
     //var newSeed = getPositionOutsideOfTextAttractorSquare(4/5);
     var newSeed = getPositionOutsideOfTextAttractorGaussian();
@@ -249,28 +272,42 @@ function initAttractors() {
 function initTextAttractors(text) {
   textAttractors = [];
 
-  var textTopLeft = {x: Infinity, y: Infinity};
-  var textBottomRight = {x: -Infinity, y: -Infinity};
+  var textPathTopLeft = {x: Infinity, y: Infinity};
+  var textPathBottomRight = {x: -Infinity, y: -Infinity};
   var fontSize = canvasRealWidth / TEXT_FONT_SIZE_SCREEN_WIDTH_RATIO;
 
   // measure the size of a single character
   var path = loadedFont.getPath(text, 0, 0, fontSize);
 
+  var subdiviseBezier = false;
+  if(textWidth > TEXT_MIN_WIDTH_TO_SUBDIVISE) {
+    subdiviseBezier = true;
+  }
+
   // get the bounding box of the text path
   for( var c = 0; c < path.commands.length; c++) {
-    if (path.commands[c].x < textTopLeft.x) {textTopLeft.x = path.commands[c].x};
-    if (path.commands[c].y < textTopLeft.y) {textTopLeft.y = path.commands[c].y};
-    if (path.commands[c].x > textBottomRight.x) {textBottomRight.x = path.commands[c].x};
-    if (path.commands[c].y > textBottomRight.y) {textBottomRight.y = path.commands[c].y};
+    if (path.commands[c].x < textPathTopLeft.x) {textPathTopLeft.x = path.commands[c].x};
+    if (path.commands[c].y < textPathTopLeft.y) {textPathTopLeft.y = path.commands[c].y};
+    if (path.commands[c].x > textPathBottomRight.x) {textPathBottomRight.x = path.commands[c].x};
+    if (path.commands[c].y > textPathBottomRight.y) {textPathBottomRight.y = path.commands[c].y};
   }
-  var textWidth = textBottomRight.x - textTopLeft.x;
-  var textHeight = textBottomRight.y - textTopLeft.y;
+  var textWidth = textPathBottomRight.x - textPathTopLeft.x;
+  var textHeight = textPathBottomRight.y - textPathTopLeft.y;
   var textX = canvasRealWidth * TEXT_X_POSITION_PERCENT / 100 - textWidth / 2;
   var textY = canvasRealHeight * TEXT_Y_POSITION_PERCENT / 100 + textHeight / 2;
 
+  textTopLeft.x = canvasRealWidth * TEXT_X_POSITION_PERCENT / 100 - textWidth / 2;
+  textTopLeft.y = canvasRealHeight * TEXT_Y_POSITION_PERCENT / 100 - textHeight / 2;
+  textBottomRight.x = textTopLeft.x + textWidth;
+  textBottomRight.y = textTopLeft.y + textHeight;
+
   for( var c = 0; c < (path.commands.length-1); c++) {
       var command2 = path.commands[c+1];
-      switch(command2.type) {
+      var commandToExecute = command2.type;
+      if(!subdiviseBezier && (command2.type=="C" || command2.type=="Q")) {
+        commandToExecute = "L";
+      }
+      switch(commandToExecute) {
         case "L":
           var command1 = path.commands[c];
           var textAttractor = {};
@@ -280,6 +317,8 @@ function initTextAttractors(text) {
           textAttractor.y2 = textY + command2.y;
           textAttractor.radius = TEXT_ATTRACTOR_RADIUS;
           textAttractors.push(textAttractor);
+          
+          // add particules at point.
           pointsX.push(textX + command1.x+Math.random()-0.5);
           pointsY.push(textY + command1.y+Math.random()-0.5);
           break;
@@ -389,7 +428,7 @@ function initTextAttractors(text) {
   }
 
   //console.log(path);
-  //loadedFont.drawPoints(ctx, text, textX, textY, fontSize * devicePixelRatio);
+  //loadedFont.drawPoints(ctx, text, textX, textY, fontSize * pixelRatio);
 }
 
 
@@ -414,15 +453,15 @@ function findClosestTextPoint(x,y) {
   var oy = 0;
   for(var a=0; a<nTextAttractor; a++) {
     var textAttractor = textAttractors[a];
-    var closestSegmentPoint = distanceToSegment(textAttractor, x, y);
-    if(a==0) {
-      deltaMin = closestSegmentPoint.distance-textAttractor.radius;
+    var closestSegmentPoint = distanceToSegment(textAttractor.x1, textAttractor.y1, textAttractor.x2, textAttractor.y2, x, y);
+    if(a == 0) {
+      deltaMin = closestSegmentPoint.distance - textAttractor.radius;
       ox = closestSegmentPoint.originX;
       oy = closestSegmentPoint.originY;
     }
     else {
-      if((closestSegmentPoint.distance-textAttractor.radius)<deltaMin) {
-        deltaMin = closestSegmentPoint.distance-textAttractor.radius;
+      if((closestSegmentPoint.distance - textAttractor.radius) < deltaMin) {
+        deltaMin = closestSegmentPoint.distance - textAttractor.radius;
         ox = closestSegmentPoint.originX;
         oy = closestSegmentPoint.originY;
       }
@@ -473,37 +512,33 @@ function getPositionOutsideOfTextAttractorGaussian() {
 }
 
 
-function distanceToSegment(segment, x, y) {
-  var x1 = segment.x1;
-  var x2 = segment.x2;
-  var y1 = segment.y1;
-  var y2 = segment.y2;
-  var l = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
-  var d = ((x-x1)*(x2-x1) + (y-y1)*(y2-y1)) / l;
-  var distanceToSegment = 0;
-  var ox = 0;
-  var oy = 0;
+function distanceToSegment(x1, y1, x2, y2, x, y) {
+  var l = (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1);
+  var d = (x-x1)*(x2-x1) + (y-y1)*(y2-y1);
   if(d>l) {
-    distanceToSegment = Math.sqrt(Math.pow(x2-x, 2) + Math.pow(y2-y, 2));
-    ox = x2;
-    oy = y2;
+    return {
+      distance: Math.sqrt((x2-x) * (x2-x) + (y2-y) * (y2-y)),
+      originX: x2,
+      originY: y2
+    }
   }
   else {
     if(d<0) {
-      distanceToSegment = Math.sqrt(Math.pow(x1-x, 2) + Math.pow(y1-y, 2));
-      ox = x1;
-      oy = y1;
+      return {
+        distance: Math.sqrt((x1-x) * (x1-x) + (y1-y) * (y1-y)),
+        originX: x1,
+        originY: y1
+      }
     }
     else {
-      ox = x1 + (x2-x1)*d/l;
-      oy = y1 + (y2-y1)*d/l;
-      distanceToSegment = Math.sqrt(Math.pow(ox-x, 2) + Math.pow(oy-y, 2));
+      var ox = x1 + (x2-x1)*d/l;
+      var oy = y1 + (y2-y1)*d/l;
+      return {
+        distance: Math.sqrt( (ox-x) * (ox-x) + (oy-y) * (oy-y)),
+        originX: ox,
+        originY: oy
+      }
     }
-  }
-  return {
-    distance: distanceToSegment,
-    originX: ox,
-    originY: oy
   }
 }
 
