@@ -424,7 +424,9 @@ function initTextAttractors(text) {
       textAttractor.radius = 2*TEXT_ATTRACTOR_RADIUS;
       textAttractors.push(textAttractor);
       noGoZone.push(textAttractor);
-      drawHelperCircle(textAttractor.x1, textAttractor.y1, 1);
+      if(DEBUG_FLAG) {
+        drawHelperCircle(textAttractor.x1, textAttractor.y1, 1);
+      }
     }
   }
 
