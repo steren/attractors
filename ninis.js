@@ -276,11 +276,6 @@ function initTextAttractors(text) {
   // measure the size of a single character
   var path = loadedFont.getPath(text, 0, 0, fontSize);
 
-  var subdiviseBezier = false;
-  if(textWidth > TEXT_MIN_WIDTH_TO_SUBDIVISE) {
-    subdiviseBezier = true;
-  }
-
   // get the bounding box of the text path
   for( var c = 0; c < path.commands.length; c++) {
     if (path.commands[c].x < textPathTopLeft.x) {textPathTopLeft.x = path.commands[c].x};
@@ -297,6 +292,11 @@ function initTextAttractors(text) {
   textTopLeft.y = canvasRealHeight * TEXT_Y_POSITION_PERCENT / 100 - textHeight / 2;
   textBottomRight.x = textTopLeft.x + textWidth;
   textBottomRight.y = textTopLeft.y + textHeight;
+
+  var subdiviseBezier = false;
+  if(textWidth > TEXT_MIN_WIDTH_TO_SUBDIVISE) {
+    subdiviseBezier = true;
+  }
 
   for( var c = 0; c < (path.commands.length-1); c++) {
       var command2 = path.commands[c+1];
