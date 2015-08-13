@@ -38,6 +38,7 @@ var canvasRealWidth, canvasRealHeight;
 
 var attractors;
 var textAttractors;
+var noGoZone;
 
 var loadedFont;
 
@@ -62,8 +63,6 @@ function init() {
   // initialize globals
   pointsX = [];
   pointsY = [];
-  attractors = [];
-  textAttractors = [];
 
   textTopLeft = {};
   textBottomRight = {};
@@ -241,6 +240,8 @@ function normalRand() {
 
 
 function initAttractors() {
+  attractors = [];
+
   var minW = -1;
   var maxW =  1;
 
@@ -378,6 +379,8 @@ function initTextAttractors(text) {
       //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
   }
 
+  noGoZone = [];
+
   var textBox = [];
   var P = {x: 100, y:100, x1:0, y1:0, x2:0, y2:0};
   textBox.push(P);
@@ -420,6 +423,7 @@ function initTextAttractors(text) {
       textAttractor.y2 = By[j+1];
       textAttractor.radius = 2*TEXT_ATTRACTOR_RADIUS;
       textAttractors.push(textAttractor);
+      noGoZone.push(textAttractor);
       drawHelperCircle(textAttractor.x1, textAttractor.y1, 1);
     }
   }
@@ -473,17 +477,16 @@ function findClosestTextPoint(x,y) {
 
 
 
-function isInTextAttractor(x,y) {
-  var nTextAttractor = textAttractors.length;
-  for(var a=0; a<nTextAttractor; a++) {
-    var textAttractor = textAttractors[a];
-    var d2 = Math.pow(x-textAttractor.x, 2) + Math.pow(y-textAttractor.y, 2);
-    var d = Math.sqrt(d2);
-    if(d<textAttractor.radius) {
-      return true;
+function isInNoGoZone(x,y) {
+  var nSegment = noGoZone.length;
+  for(var s=0; s<nSegment; s++) {
+    var segment = noGoZone[s];
+    var angle = (segment.x1-x) * (segment.y2-y) - (segment.x2-x) * (segment.y1-y);
+    if(angle<0) {
+      return false;
     }
   }
-  return false;
+  return true;
 }
 
 
@@ -492,7 +495,7 @@ function getPositionOutsideOfTextAttractorSquare(sizeRatio) {
   while(true) {
     var x = push(Math.random() * canvasRealWidth * sizeRatio + canvasRealWidth * ( 1 - sizeRatio) / 2 );
     var y = push(Math.random() * canvasRealHeight * sizeRatio + canvasRealHeight * ( 1 - sizeRatio) / 2);
-    if(!isInTextAttractor(x,y)) {
+    if(!isInNoGoZone(x,y)) {
       return [x, y];
     }
   }
@@ -502,7 +505,7 @@ function getPositionOutsideOfTextAttractorGaussian() {
   while(true) {
     var x = normalRand() * canvasRealWidth;
     var y = normalRand() * canvasRealHeight;
-    if(!isInTextAttractor(x,y)) {
+    if(!isInNoGoZone(x,y)) {
       return [x, y];
     }
   }
@@ -566,3 +569,5 @@ function bezier(T, X) {
 
   return res;
 }
+
+
