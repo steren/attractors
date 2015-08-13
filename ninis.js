@@ -19,6 +19,8 @@ var TEXT__FONT_SIZE_SCREEN_WIDTH_RATIO = 12;
 var TEXT_X_POSITION_PERCENT = 50;
 var TEXT_Y_POSITION_PERCENT = 33;
 var TEXT_ATTRACTOR_RADIUS = 1;
+/** under this width, do not subdivise the quadratic and cubic bezier curves in the text's path */
+var TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
 
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
 //var FONT = 'Codystar/Codystar-Regular.ttf';
@@ -275,6 +277,11 @@ function initTextAttractors(text) {
   var textX = canvasRealWidth * TEXT_X_POSITION_PERCENT / 100 - textWidth / 2;
   var textY = canvasRealHeight * TEXT_Y_POSITION_PERCENT / 100 + textHeight / 2;
   
+  var subdiviseBezier = false;
+  if(textWidth > TEXT_MIN_WIDTH_TO_SUBDIVISE) {
+    subdiviseBezier = true;
+  }
+
   textTopLeft.x = canvasRealWidth * TEXT_X_POSITION_PERCENT / 100 - textWidth / 2;
   textTopLeft.y = canvasRealHeight * TEXT_Y_POSITION_PERCENT / 100 - textHeight / 2;
   textBottomRight.x = textTopLeft.x + textWidth;
@@ -282,9 +289,9 @@ function initTextAttractors(text) {
 
   for( var c = 0; c < (path.commands.length-1); c++) {
       var command2 = path.commands[c+1];
-      if(command2.type!="M") {
+      if(command2.type != "M") {
         var command1 = path.commands[c];
-        if(command2.type=="L") {
+        if(command2.type == "L" || subdiviseBezier == false) {
           var textAttractor = {};
           textAttractor.x1 = textX + command1.x;
           textAttractor.y1 = textY + command1.y;
@@ -294,7 +301,7 @@ function initTextAttractors(text) {
           textAttractors.push(textAttractor);
         }
         else {
-          if(command2.type=="Q"){
+          if(command2.type == "Q"){
             var textAttractor = {};
             var t = 1/2;
             textAttractor.x1 = textX + command1.x;
