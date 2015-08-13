@@ -1,5 +1,5 @@
 var SIZE_SHADOW = 16;
-var SHADOW_IMAGE = 'shadow-o02-ellipse-'
+var SHADOW_IMAGE = 'shadow-o01-ellipse-'
 var DELTA_SHADOW_X = 1;
 var DELTA_SHADOW_Y = 1;
 var NB_ATTRACTORS = 25;
@@ -424,7 +424,7 @@ function initTextAttractors(text) {
     }
   }
 
-  //console.log(path);
+  console.log(path);
   //loadedFont.drawPoints(ctx, text, textX, textY, fontSize * pixelRatio);
 }
 

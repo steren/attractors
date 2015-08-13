@@ -17,9 +17,9 @@
    version="1.1"
    inkscape:version="0.91 r13725"
    sodipodi:docname="shadow.svg"
-   inkscape:export-filename="/Users/steren/Work/save-the-date/les-ninis/shadow-o02-ellipse-16px.png"
-   inkscape:export-xdpi="37.060001"
-   inkscape:export-ydpi="37.060001">
+   inkscape:export-filename="/Users/steren/Work/save-the-date/les-ninis/shadow-o01-ellipse-8px.png"
+   inkscape:export-xdpi="18.530001"
+   inkscape:export-ydpi="18.530001">
   <metadata
      id="metadata10">
     <rdf:RDF>
@@ -83,7 +83,7 @@
      id="layer1"
      transform="translate(-64.857134,-79.362177)">
     <rect
-       style="opacity:0.02;fill:url(#radialGradient4216);fill-opacity:1;stroke:none;stroke-width:16;stroke-linecap:square;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="opacity:0.01;fill:url(#radialGradient4216);fill-opacity:1;stroke:none;stroke-width:16;stroke-linecap:square;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="rect4208"
        width="38.033913"
        height="37.046021"
