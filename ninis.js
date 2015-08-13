@@ -21,7 +21,7 @@ var TEXT_Y_POSITION_PERCENT = 33;
 var TEXT_ATTRACTOR_RADIUS = 1;
 /** under this width, do not subdivise the quadratic and cubic bezier curves in the text's path */
 var TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
-var PROBABILITY_POINT_APPEARS_NEAR_TEXT = 0.1;
+var PROBABILITY_POINT_APPEARS_NEAR_TEXT = 0.05;
 var DEBUG_FLAG = false;
 
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
@@ -82,6 +82,7 @@ function init() {
 
   initAttractors();
   initTextAttractors(TEXT);
+  initNoGoZoneTextAttractors();
   initPoints();
 
   colorSize = Math.ceil(pointsX.length / COLORS.length);
@@ -92,7 +93,7 @@ function init() {
 
 function displayMessage() {
   var message = document.getElementById('message');
-  message.className = 'visible'; 
+  message.className = 'visible';
 }
 
 function resizeCanvasToWindow() {
@@ -206,9 +207,9 @@ function field(x, y) {
 
 function isNearText(x,y) {
   var near = D/8;
-  if( x - (textTopLeft.x - near) > 0 
+  if( x - (textTopLeft.x - near) > 0
   && x - (textBottomRight.x + near) < 0
-  && y - (textTopLeft.y - near) > 0 
+  && y - (textTopLeft.y - near) > 0
   && y - (textBottomRight.y + near) < 0) {
     return true;
   }
@@ -216,7 +217,7 @@ function isNearText(x,y) {
 }
 
 function initPoints() {
-  // for a device with higher pixel ratio, put more particules. 
+  // for a device with higher pixel ratio, put more particules.
   // but do not put pixelRatio * pixelRatio more particules for performances reasons
   var nbParticules = pixelRatio * PARTICULE_DENSITY * canvasScreenWidth * canvasScreenHeight / 1000000
   for(var i = 0; i < nbParticules; i++) {
@@ -277,6 +278,8 @@ function initTextAttractors(text) {
 
   // measure the size of a single character
   var path = loadedFont.getPath(text, 0, 0, fontSize);
+  console.log(path);
+  //loadedFont.drawPoints(ctx, text, textX, textY, fontSize * pixelRatio);
 
   // get the bounding box of the text path
   for( var c = 0; c < path.commands.length; c++) {
@@ -307,6 +310,7 @@ function initTextAttractors(text) {
         commandToExecute = "L";
       }
 
+      var command1 = path.commands[c];
       // add points near text
       if( Math.random() < PROBABILITY_POINT_APPEARS_NEAR_TEXT ) {
         pointsX.push(textX + command1.x+Math.random()-0.5);
@@ -315,7 +319,6 @@ function initTextAttractors(text) {
 
       switch(commandToExecute) {
         case "L":
-          var command1 = path.commands[c];
           var textAttractor = {};
           textAttractor.x1 = textX + command1.x;
           textAttractor.y1 = textY + command1.y;
@@ -323,7 +326,7 @@ function initTextAttractors(text) {
           textAttractor.y2 = textY + command2.y;
           textAttractor.radius = TEXT_ATTRACTOR_RADIUS;
           textAttractors.push(textAttractor);
-          
+
           // if a real L (line)
           if(command2.type == "L") {
             if( Math.random() < 0.5 ) {
@@ -333,7 +336,6 @@ function initTextAttractors(text) {
           }
           break;
         case "Q":
-          var command1 = path.commands[c];
           var textAttractor = {};
           var t = 1/2;
           textAttractor.x1 = textX + command1.x;
@@ -353,7 +355,6 @@ function initTextAttractors(text) {
           textAttractors.push(textAttractor2);
           break;
         case "C":
-          var command1 = path.commands[c];
           var textAttractor = {};
           var x = bezier([1/3, 2/3], [command1.x, command2.x1, command2.x2, command2.x]);
           var y = bezier([1/3, 2/3], [command1.y, command2.y1, command2.y2, command2.y]);
@@ -383,19 +384,37 @@ function initTextAttractors(text) {
 
       //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
   }
+}
+
+
+function initNoGoZoneTextAttractors() {
+
+  var message = document.getElementById('message');
+  var mainMessage = document.getElementById('main-message');
 
   noGoZone = [];
 
+  var RANDOMBACKGROUND = 0.05;
+
   var textBox = [];
-  var P = {x: 100, y:100, x1:0, y1:0, x2:0, y2:0};
-  textBox.push(P);
-  P = {x: 200, y:100, x1:0, y1:0, x2:0, y2:0};
-  textBox.push(P);
-  P = {x: 300, y:300, x1:0, y1:0, x2:0, y2:0};
-  textBox.push(P);
-  P = {x: 100, y:300, x1:0, y1:0, x2:0, y2:0};
-  textBox.push(P);
+  textBox.push({
+    x: (canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 2) * (Math.random() * RANDOMBACKGROUND + 1), 
+    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (Math.random() * RANDOMBACKGROUND + 1), 
+    x1:0, y1:0, x2:0, y2:0});
+  textBox.push({
+    x: (canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 2) * (Math.random() * RANDOMBACKGROUND + 1), 
+    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (Math.random() * RANDOMBACKGROUND + 1), 
+    x1:0, y1:0, x2:0, y2:0});
+  textBox.push({
+    x: (canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 3) * (Math.random() * RANDOMBACKGROUND + 1), 
+    y: canvasRealHeight, 
+    x1:0, y1:0, x2:0, y2:0});
+  textBox.push({
+    x: (canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 3) * (Math.random() * RANDOMBACKGROUND + 1), 
+    y: canvasRealHeight, 
+    x1:0, y1:0, x2:0, y2:0});
   var n = textBox.length;
+
   for(var i=0; i<n; i++) {
     var P1 = textBox[(i-1+n)%n];
     var P0 = textBox[i];
@@ -435,8 +454,7 @@ function initTextAttractors(text) {
     }
   }
 
-  console.log(path);
-  //loadedFont.drawPoints(ctx, text, textX, textY, fontSize * pixelRatio);
+
 }
 
 
@@ -569,7 +587,7 @@ function bezier(T, X) {
     var x = 0;
     var t = T[i];
     for(var j=0; j<n; j++) {
-      x += w[j+1]*Math.pow(1-t,n-1-j)*Math.pow(t,j)*X[j]; 
+      x += w[j+1]*Math.pow(1-t,n-1-j)*Math.pow(t,j)*X[j];
     }
     res.push(x);
   }
