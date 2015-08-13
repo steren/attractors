@@ -199,9 +199,6 @@ function field(x, y) {
     ux = (1-textWeight)*ux + textWeight * textUx;
     uy = (1-textWeight)*uy + textWeight * textUy;
 
-    norm = Math.sqrt(ux*ux + uy*uy);
-    ux = ux / norm;
-    uy = uy / norm;
   }
 
   return [ux, uy];
