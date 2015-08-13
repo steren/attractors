@@ -14,7 +14,7 @@ var STEP_DISTANCE = 1;
 var COLORS = ['#DBCEC1', '#F7F6F5'];
 var BACKGROUND_COLOR = '#57A3BD';
 var MESSAGE_APPEARANCE_DELAY = 8 * 1000;
-var TEXT = '13 . 8 . 2016';
+var TEXT = '13  8  2016';
 var TEXT_FONT_SIZE_SCREEN_WIDTH_RATIO = 12;
 var TEXT_X_POSITION_PERCENT = 50;
 var TEXT_Y_POSITION_PERCENT = 33;
@@ -22,7 +22,9 @@ var TEXT_ATTRACTOR_RADIUS = 1;
 /** under this width, do not subdivise the quadratic and cubic bezier curves in the text's path */
 var TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
 var PROBABILITY_POINT_APPEARS_NEAR_TEXT = 0.05;
+var RANDOMBACKGROUND = 0.05;
 var DEBUG_FLAG = false;
+
 
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
 //var FONT = 'Codystar/Codystar-Regular.ttf';
@@ -47,6 +49,7 @@ var loadedFont;
 var D;
 
 var textTopLeft, textBottomRight;
+var noGoTopLeft, noGoBottomRight;
 
 opentype.load('fonts/' + FONT, function(err, font) {
   console.log(font);
@@ -67,6 +70,9 @@ function init() {
 
   textTopLeft = {};
   textBottomRight = {};
+
+  noGoTopLeft = {};
+  noGoBottomRight = {};
 
   pixelRatio = window.devicePixelRatio || 1;
 
@@ -387,30 +393,39 @@ function initTextAttractors(text) {
 }
 
 
-function initNoGoZoneTextAttractors() {
+function initNoGoZoneTextAttractors() {  
+
+  noGoTopLeft = {x: Infinity, y: Infinity};
+  noGoBottomRight = {x: -Infinity, y: -Infinity};
 
   var message = document.getElementById('message');
   var mainMessage = document.getElementById('main-message');
 
   noGoZone = [];
 
-  var RANDOMBACKGROUND = 0.05;
-
   var textBox = [];
   textBox.push({
-    x: (canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 2) * (Math.random() * RANDOMBACKGROUND + 1), 
-    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (Math.random() * RANDOMBACKGROUND + 1), 
+    x: (canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 2) * (1 - Math.random() * 2 * RANDOMBACKGROUND), 
+    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (1 - Math.random() * RANDOMBACKGROUND), 
     x1:0, y1:0, x2:0, y2:0});
+
   textBox.push({
-    x: (canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 2) * (Math.random() * RANDOMBACKGROUND + 1), 
-    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (Math.random() * RANDOMBACKGROUND + 1), 
+    x: (canvasRealWidth / 2 ) * (1 - Math.random() * RANDOMBACKGROUND), 
+    y: (canvasRealHeight - message.offsetHeight * pixelRatio), 
     x1:0, y1:0, x2:0, y2:0});
+
   textBox.push({
-    x: (canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 3) * (Math.random() * RANDOMBACKGROUND + 1), 
+    x: (canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 2) * (1 + Math.random() * 2 * RANDOMBACKGROUND), 
+    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (1 - Math.random() * RANDOMBACKGROUND), 
+    x1:0, y1:0, x2:0, y2:0});
+
+  textBox.push({
+    x: randomIntFromInterval(canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 4, 3 * canvasRealWidth / 4), 
     y: canvasRealHeight, 
     x1:0, y1:0, x2:0, y2:0});
+    
   textBox.push({
-    x: (canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 3) * (Math.random() * RANDOMBACKGROUND + 1), 
+    x: randomIntFromInterval(canvasRealWidth / 4, canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 4), 
     y: canvasRealHeight, 
     x1:0, y1:0, x2:0, y2:0});
   var n = textBox.length;
@@ -448,6 +463,12 @@ function initNoGoZoneTextAttractors() {
       textAttractor.radius = 2*TEXT_ATTRACTOR_RADIUS;
       textAttractors.push(textAttractor);
       noGoZone.push(textAttractor);
+
+      if (textAttractor.x1 > noGoBottomRight.x) {noGoBottomRight.x = textAttractor.x1};
+      if (textAttractor.y1 > noGoBottomRight.y) {noGoBottomRight.y = textAttractor.y1};
+      if (textAttractor.x1 < noGoTopLeft.x) {noGoTopLeft.x = textAttractor.x1};
+      if (textAttractor.y1 < noGoTopLeft.y) {noGoTopLeft.y = textAttractor.y1};
+
       if(DEBUG_FLAG) {
         drawHelperCircle(textAttractor.x1, textAttractor.y1, 1);
       }
@@ -503,15 +524,23 @@ function findClosestTextPoint(x,y) {
 
 
 function isInNoGoZone(x,y) {
-  var nSegment = noGoZone.length;
-  for(var s=0; s<nSegment; s++) {
-    var segment = noGoZone[s];
-    var angle = (segment.x1-x) * (segment.y2-y) - (segment.x2-x) * (segment.y1-y);
-    if(angle<0) {
-      return false;
-    }
+  if( x - noGoTopLeft.x > 0
+  && x - noGoBottomRight.x < 0
+  && y - noGoTopLeft.y > 0
+  && y - noGoBottomRight.y < 0) {
+    return true;
   }
-  return true;
+  return false;
+
+//  var nSegment = noGoZone.length;
+//  for(var s=0; s<nSegment; s++) {
+//    var segment = noGoZone[s];
+//    var angle = (segment.x1-x) * (segment.y2-y) - (segment.x2-x) * (segment.y1-y);
+//    if(angle<0) {
+//      return false;
+//    }
+//  }
+//  return true;
 }
 
 
@@ -596,3 +625,7 @@ function bezier(T, X) {
 }
 
 
+function randomIntFromInterval(min,max)
+{
+    return Math.floor(Math.random()*(max-min+1)+min);
+}
