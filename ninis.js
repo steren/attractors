@@ -21,6 +21,7 @@ var TEXT_Y_POSITION_PERCENT = 33;
 var TEXT_ATTRACTOR_RADIUS = 1;
 /** under this width, do not subdivise the quadratic and cubic bezier curves in the text's path */
 var TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
+var PROBABILITY_POINT_APPEARS_NEAR_TEXT = 0.1;
 var DEBUG_FLAG = false;
 
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
@@ -305,6 +306,13 @@ function initTextAttractors(text) {
       if(!subdiviseBezier && (command2.type=="C" || command2.type=="Q")) {
         commandToExecute = "L";
       }
+
+      // add points near text
+      if( Math.random() < PROBABILITY_POINT_APPEARS_NEAR_TEXT ) {
+        pointsX.push(textX + command1.x+Math.random()-0.5);
+        pointsY.push(textY + command1.y+Math.random()-0.5);
+      }
+
       switch(commandToExecute) {
         case "L":
           var command1 = path.commands[c];
@@ -316,15 +324,15 @@ function initTextAttractors(text) {
           textAttractor.radius = TEXT_ATTRACTOR_RADIUS;
           textAttractors.push(textAttractor);
           
-          // add particules at point.
-          pointsX.push(textX + command1.x+Math.random()-0.5);
-          pointsY.push(textY + command1.y+Math.random()-0.5);
+          // if a real L (line)
+          if(command2.type == "L") {
+            if( Math.random() < 0.5 ) {
+              pointsX.push(textX + command1.x+Math.random()-0.5);
+              pointsY.push(textY + command1.y+Math.random()-0.5);
+            }
+          }
           break;
         case "Q":
-          if(Math.random()>0.75) {
-            pointsX.push(textX + command1.x+Math.random()-0.5);
-            pointsY.push(textY + command1.y+Math.random()-0.5);
-          }
           var command1 = path.commands[c];
           var textAttractor = {};
           var t = 1/2;
@@ -345,10 +353,6 @@ function initTextAttractors(text) {
           textAttractors.push(textAttractor2);
           break;
         case "C":
-          if(Math.random()>0.5) {
-            pointsX.push(textX + command1.x+Math.random()-0.5);
-            pointsY.push(textY + command1.y+Math.random()-0.5);
-          }
           var command1 = path.commands[c];
           var textAttractor = {};
           var x = bezier([1/3, 2/3], [command1.x, command2.x1, command2.x2, command2.x]);
@@ -376,6 +380,7 @@ function initTextAttractors(text) {
           break;
         default: // "M", "Z"
       }
+
       //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
   }
 
