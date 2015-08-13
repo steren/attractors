@@ -431,31 +431,31 @@ function getPositionOutsideOfTextAttractorGaussian() {
 
 
 function distanceToSegment(x1, y1, x2, y2, x, y) {
-  var l = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
-  var d = ((x-x1)*(x2-x1) + (y-y1)*(y2-y1)) / l;
-  var distanceToSegment = 0;
-  var ox = 0;
-  var oy = 0;
+  var l = (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1);
+  var d = (x-x1)*(x2-x1) + (y-y1)*(y2-y1);
   if(d>l) {
-    distanceToSegment = Math.sqrt((x2-x) * (x2-x) + (y2-y) * (y2-y));
-    ox = x2;
-    oy = y2;
+    return {
+      distance: Math.sqrt((x2-x) * (x2-x) + (y2-y) * (y2-y)),
+      originX: x2,
+      originY: y2
+    }
   }
   else {
     if(d<0) {
-      distanceToSegment = Math.sqrt((x1-x) * (x1-x) + (y1-y) * (y1-y));
-      ox = x1;
-      oy = y1;
+      return {
+        distance: Math.sqrt((x1-x) * (x1-x) + (y1-y) * (y1-y)),
+        originX: x1,
+        originY: y1
+      }
     }
     else {
-      ox = x1 + (x2-x1)*d/l;
-      oy = y1 + (y2-y1)*d/l;
-      distanceToSegment = Math.sqrt( (ox-x) * (ox-x) + (oy-y) * (oy-y));
+      var ox = x1 + (x2-x1)*d/l;
+      var oy = y1 + (y2-y1)*d/l;
+      return {
+        distance: Math.sqrt( (ox-x) * (ox-x) + (oy-y) * (oy-y)),
+        originX: ox,
+        originY: oy
+      }
     }
-  }
-  return {
-    distance: distanceToSegment,
-    originX: ox,
-    originY: oy
   }
 }
