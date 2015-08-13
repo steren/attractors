@@ -5,8 +5,8 @@ var DELTA_SHADOW_Y = 1;
 var NB_ATTRACTORS = 25;
 var NEW_SEED_CREATION_PROBABILITY = 0;
 /** number of particule for a square of 1000 * 1000 pixels */
-var PARTICULE_DENSITY = 800;
-var STROKE_LINE_WIDTH = 0.4;
+var PARTICULE_DENSITY = 900;
+var STROKE_LINE_WIDTH = 0.3;
 /** Distance to move the points at each frame. */
 // Note: We prefer using a constant distance per frame rather than defining a speed.
 // The speed would result in bad results on low framerate.
