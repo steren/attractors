@@ -551,16 +551,6 @@ function isInNoGoZone(x,y) {
     return true;
   }
   return false;
-
-//  var nSegment = noGoZone.length;
-//  for(var s=0; s<nSegment; s++) {
-//    var segment = noGoZone[s];
-//    var angle = (segment.x1-x) * (segment.y2-y) - (segment.x2-x) * (segment.y1-y);
-//    if(angle<0) {
-//      return false;
-//    }
-//  }
-//  return true;
 }
 
 
