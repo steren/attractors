@@ -48,8 +48,12 @@ var loadedFont;
 // characteristic distance of the image
 var D;
 
+/** bounding box of the main text */
 var textTopLeft, textBottomRight;
+/** bounding box of the no GO Zone */
 var noGoTopLeft, noGoBottomRight;
+
+var boundingBoxes;
 
 opentype.load('fonts/' + FONT, function(err, font) {
   console.log(font);
@@ -74,6 +78,16 @@ function init() {
 
   noGoTopLeft = {};
   noGoBottomRight = {};
+
+  boundingBoxes = [];
+  boundingBoxes.push({
+    topleft: textTopLeft,
+    bottomright: textBottomRight
+  });
+  boundingBoxes.push({
+    topleft: noGoTopLeft,
+    bottomright: noGoBottomRight
+  });
 
   pixelRatio = window.devicePixelRatio || 1;
 
@@ -193,7 +207,7 @@ function field(x, y) {
   uy = uy / norm;
 
   // If we are nead the text, add the text contribution to the field
-  if(true || isNearText(x,y)) {
+  if(isNearText(x,y)) {
     var closestTextPoint = findClosestTextPoint(x,y);
     var textUx = (x - closestTextPoint.originX);
     var textUy = (y - closestTextPoint.originY);
@@ -214,11 +228,14 @@ function field(x, y) {
 
 function isNearText(x,y) {
   var near = D/8;
-  if( x - (textTopLeft.x - near) > 0
-  && x - (textBottomRight.x + near) < 0
-  && y - (textTopLeft.y - near) > 0
-  && y - (textBottomRight.y + near) < 0) {
-    return true;
+  
+  for(var b = 0; b < boundingBoxes.length; b++) {
+    if( x - (boundingBoxes[b].topleft.x - near) > 0
+      && x - (boundingBoxes[b].bottomright.x + near) < 0
+      && y - (boundingBoxes[b].topleft.y - near) > 0
+      && y - (boundingBoxes[b].bottomright.y + near) < 0) {
+      return true;
+    }
   }
   return false;
 }
@@ -396,8 +413,10 @@ function initTextAttractors(text) {
 
 function initNoGoZoneTextAttractors() {  
 
-  noGoTopLeft = {x: Infinity, y: Infinity};
-  noGoBottomRight = {x: -Infinity, y: -Infinity};
+  noGoTopLeft.x = Infinity;
+  noGoTopLeft.y = Infinity;
+  noGoBottomRight.x = -Infinity;
+  noGoBottomRight.y = -Infinity;
 
   var message = document.getElementById('message');
   var mainMessage = document.getElementById('main-message');
