@@ -303,7 +303,7 @@ function initTextAttractors(text) {
   // measure the size of a single character
   var path = loadedFont.getPath(text, 0, 0, fontSize);
   console.log(path);
-  //loadedFont.drawPoints(ctx, text, textX, textY, fontSize * pixelRatio);
+
 
   // get the bounding box of the text path
   for( var c = 0; c < path.commands.length; c++) {
@@ -322,6 +322,9 @@ function initTextAttractors(text) {
   textBottomRight.x = textTopLeft.x + textWidth;
   textBottomRight.y = textTopLeft.y + textHeight;
 
+  if(DEBUG_FLAG) {
+    loadedFont.drawPoints(ctx, text, textX, textY, fontSize * pixelRatio);
+  }
   var subdiviseBezier = false;
   if(textWidth > TEXT_MIN_WIDTH_TO_SUBDIVISE) {
     subdiviseBezier = true;
