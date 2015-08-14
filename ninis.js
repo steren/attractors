@@ -23,9 +23,11 @@ var TEXT_ATTRACTOR_RADIUS = 1;
 var TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
 var PROBABILITY_POINT_APPEARS_NEAR_TEXT = 0.05;
 var RANDOMBACKGROUND = 0.05;
+var GAUSSIAN_PARAM_TEXT = 1/200;
+var ATTRACTOR_RADIUS_MIN = 1/100;
+var ATTRACTOR_RADIUS_MAX = 16 * ATTRACTOR_RADIUS_MIN;
 var DEBUG_FLAG = false;
-
-
+ 
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
 //var FONT = 'Codystar/Codystar-Regular.ttf';
 //var FONT = 'Fredoka_One/FredokaOne-Regular.ttf';
@@ -93,23 +95,23 @@ function init() {
 
   canvas = document.getElementById("paint-canvas");
   ctx = canvas.getContext("2d", {alpha : false});
+  resizeCanvasToWindow();
+  D = Math.max(canvas.width, canvas.height);
 
   shadow = new Image();
   shadow.src = SHADOW_IMAGE + SIZE_SHADOW + 'px.png';
 
-  resizeCanvasToWindow();
+
 
   paintCanvasWithBackground();
 
-  initAttractors();
+  initAttractors(ATTRACTOR_RADIUS_MIN, ATTRACTOR_RADIUS_MAX);
   initTextAttractors(TEXT);
   initNoGoZoneTextAttractors();
   initPoints();
 
   colorSize = Math.ceil(pointsX.length / COLORS.length);
   ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
-
-  D = Math.max(canvas.width, canvas.height);
 }
 
 function displayMessage() {
@@ -193,16 +195,16 @@ function field(x, y) {
   for(var a = 0; a < attractors.length; a++) {
     var attractor = attractors[a];
 
-    var d2 =  Math.pow(x - attractor.x, 2) + Math.pow(y - attractor.y, 2);
+    var d2 =  (x - attractor.x) * (x - attractor.x) + (y - attractor.y) * (y - attractor.y);
     var d = Math.sqrt(d2);
 
-    var weight = attractor.weight * Math.exp( -1 * d2 / attractor.radius );
+    var weight = attractor.weight * Math.exp( -1 * d2 / (attractor.radius * attractor.radius) );
 
     ux += weight * (x - attractor.x) / d;
     uy += weight * (y - attractor.y) / d;
   }
 
-  var norm = Math.sqrt(ux*ux + uy * uy);
+  var norm = Math.sqrt(ux * ux + uy * uy);
   ux = ux / norm;
   uy = uy / norm;
 
@@ -216,8 +218,7 @@ function field(x, y) {
     textUy = textUy / norm;
 
     // Combine fields
-//     textWeight = Math.exp( -1 * Math.pow(closestTextPoint.distance,1) /  (0.25*D) );
-    textWeight = Math.exp( -1 * Math.pow(closestTextPoint.distance,2) /  (4*D) );
+    textWeight = Math.exp( -1 * closestTextPoint.distance * closestTextPoint.distance /  (GAUSSIAN_PARAM_TEXT * D * D) );
     ux = (1-textWeight)*ux + textWeight * textUx;
     uy = (1-textWeight)*uy + textWeight * textUy;
 
@@ -265,15 +266,13 @@ function normalRand() {
 
 
 
-function initAttractors() {
+function initAttractors(min, max) {
   attractors = [];
 
   var minW = -1;
   var maxW =  1;
-
-  var D = Math.max(canvasRealWidth, canvasRealHeight);
-  var minD = 8 * D * pixelRatio;
-  var maxD = 128 * D * pixelRatio;
+  var minD = min * D;
+  var maxD = max * D;
 
   for( var a = 0; a < NB_ATTRACTORS; a++) {
     var attractor = {};
