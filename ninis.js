@@ -14,7 +14,7 @@ var STEP_DISTANCE = 1;
 var COLORS = ['#DBCEC1', '#F7F6F5'];
 var BACKGROUND_COLOR = '#57A3BD';
 var MESSAGE_APPEARANCE_DELAY = 8 * 1000;
-var TEXT = '13  8  2016';
+var TEXT = '13   8   2016';
 var TEXT_FONT_SIZE_SCREEN_WIDTH_RATIO = 12;
 var TEXT_X_POSITION_PERCENT = 50;
 var TEXT_Y_POSITION_PERCENT = 33;
@@ -62,6 +62,7 @@ window.setTimeout(displayMessage, MESSAGE_APPEARANCE_DELAY);
 
 window.addEventListener( 'resize', init, false );
 document.body.addEventListener('click', init, true);
+
 
 function init() {
   // initialize globals
