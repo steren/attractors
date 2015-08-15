@@ -134,18 +134,25 @@ function init() {
 }
 
 function onKeyUp(e) {
-  if (e.which == 8) {
+  if (e.which == 13) { // Enter
+    init();
+  } else if (e.which == 8) { // Backspace
     return;
-  } else if (e.which == 13) {
+  } else if (e.which == 27) { // Escape
     typedText = '';
-  } else {
-     typedText += String.fromCharCode(e.which); 
+    init();
+  } else { // any char or space
+    var typedChar = String.fromCharCode(e.which);
+    if(typedChar.match(/[a-zA-Z\s/]/)) {
+      typedText += typedChar;
+      init();
+    }
   }
-  init();
+
 }
 
 function onKeyDown(e) {
-  if(e.which == 8) {
+  if(e.which == 8) { // Backspace
      typedText = typedText.slice(0, -1);
      init();
      e.preventDefault(); 
