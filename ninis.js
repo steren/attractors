@@ -1,12 +1,13 @@
 var SIZE_SHADOW = 16;
-var SHADOW_IMAGE = 'shadow-o01-ellipse-'
+var SHADOW_IMAGE = 'shadow-o30-ellipse-'
+var SHADOW_OPACITY = 0.04;
 var DELTA_SHADOW_X = 1;
 var DELTA_SHADOW_Y = 1;
 var NB_ATTRACTORS = 25;
 var NEW_SEED_CREATION_PROBABILITY = 0;
 /** number of particule for a square of 1000 * 1000 pixels */
 var PARTICULE_DENSITY = 900;
-var STROKE_LINE_WIDTH = 0.3;
+var STROKE_LINE_WIDTH = 0.35;
 /** Distance to move the points at each frame. */
 // Note: We prefer using a constant distance per frame rather than defining a speed.
 // The speed would result in bad results on low framerate.
@@ -174,9 +175,11 @@ function render(timestamp) {
 
   // draw shadow
   if(drawShadow) {
+    ctx.globalAlpha = SHADOW_OPACITY;
     for (var i = 0; i < pointsX.length; i++ ) {
       ctx.drawImage(shadow, pointsX[i] - DELTA_SHADOW_X * pixelRatio, pointsY[i] - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
     }
+    ctx.globalAlpha = 1.0;
   }
   drawShadow = !drawShadow;
 
