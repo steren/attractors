@@ -1,6 +1,6 @@
 var SIZE_SHADOW = 16;
 var SHADOW_IMAGE = 'shadow-o30-ellipse-'
-var SHADOW_OPACITY = 0.04;
+var SHADOW_OPACITY = 0.03;
 var DELTA_SHADOW_X = 1;
 var DELTA_SHADOW_Y = 1;
 var NB_ATTRACTORS = 25;
@@ -65,9 +65,6 @@ var noGoTopLeft, noGoBottomRight;
 var boundingBoxes;
 
 var typedText = '';
-
-/** Shoud shadows be drawn at next render (alternates every frame) */
-var drawShadow = true;
 
 opentype.load('fonts/' + FONT, function(err, font) {
   console.log(font);
@@ -218,16 +215,13 @@ function render(timestamp) {
   }
 
   // draw shadow
-  if(drawShadow) {
-    ctx.globalAlpha = SHADOW_OPACITY;
-    for (var i = 0; i < pointsX.length; i++ ) {
-      if(drawShadowAtPoint[i]) {
-        ctx.drawImage(shadow, pointsX[i] - DELTA_SHADOW_X * pixelRatio, pointsY[i] - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
-      }
+  ctx.globalAlpha = SHADOW_OPACITY;
+  for (var i = 0; i < pointsX.length; i++ ) {
+    if(drawShadowAtPoint[i]) {
+      ctx.drawImage(shadow, pointsX[i] - DELTA_SHADOW_X * pixelRatio, pointsY[i] - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
     }
-    ctx.globalAlpha = 1.0;
   }
-  drawShadow = !drawShadow;
+  ctx.globalAlpha = 1.0;
 
 }
 
