@@ -45,6 +45,8 @@ var colorSize;
 var pointsX, pointsY;
 var canvasScreenWidth, canvasScreenHeight;
 var canvasRealWidth, canvasRealHeight;
+/** Array containing the info if the shadow of a given particule should be drawn */
+var drawShadowAtPoint;
 
 var attractors;
 var textAttractors;
@@ -93,6 +95,7 @@ function init() {
   // initialize globals
   pointsX = [];
   pointsY = [];
+  drawShadowAtPoint = [];
 
   textTopLeft = {};
   textBottomRight = {};
@@ -128,6 +131,7 @@ function init() {
   initTextAttractors(text, cleanPath);
   initNoGoZoneTextAttractors();
   initPoints();
+  initDrawShadow();
 
   colorSize = Math.ceil(pointsX.length / COLORS.length);
   ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
@@ -203,7 +207,7 @@ function render(timestamp) {
       else {
         var oldX = pointsX[i];
         var oldY = pointsY[i];
-        var newPosition = getNewPosition(oldX, oldY);
+        var newPosition = getNewPosition(oldX, oldY, i);
         ctx.moveTo(oldX,oldY);
         ctx.lineTo(newPosition[0], newPosition[1]);
         pointsX[i] = newPosition[0];
@@ -217,7 +221,9 @@ function render(timestamp) {
   if(drawShadow) {
     ctx.globalAlpha = SHADOW_OPACITY;
     for (var i = 0; i < pointsX.length; i++ ) {
-      ctx.drawImage(shadow, pointsX[i] - DELTA_SHADOW_X * pixelRatio, pointsY[i] - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
+      if(drawShadowAtPoint[i]) {
+        ctx.drawImage(shadow, pointsX[i] - DELTA_SHADOW_X * pixelRatio, pointsY[i] - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
+      }
     }
     ctx.globalAlpha = 1.0;
   }
@@ -225,8 +231,14 @@ function render(timestamp) {
 
 }
 
-function getNewPosition(x, y) {
+function getNewPosition(x, y, index) {
   var fieldXY = field(x,y);
+
+  // if distance is small, reduce probability to draw shadow
+  drawShadowAtPoint[index] = true;
+  if( Math.random() > (fieldXY[0]*fieldXY[0] + fieldXY[1]*fieldXY[1]) ) {
+      drawShadowAtPoint[index] = false;
+  }
 
   var ux = -1 * STEP_DISTANCE * pixelRatio * fieldXY[1];
   var uy =      STEP_DISTANCE * pixelRatio * fieldXY[0];
@@ -302,6 +314,12 @@ function initPoints() {
     var newSeed = getPositionOutsideOfTextAttractorGaussian();
     pointsX.push(newSeed[0]);
     pointsY.push(newSeed[1]);
+  }
+}
+
+function initDrawShadow() {
+  for(var p = 0; p < pointsX.length; p++) {
+    drawShadowAtPoint.push(true);
   }
 }
 
