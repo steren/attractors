@@ -27,6 +27,7 @@ var RANDOMBACKGROUND = 0.05;
 var GAUSSIAN_PARAM_TEXT = 1/200;
 var ATTRACTOR_RADIUS_MIN = 1/50;
 var ATTRACTOR_RADIUS_MAX = 16 * ATTRACTOR_RADIUS_MIN;
+/** Should ther text path be cleaned by duplicate vertices */
 var CLEAN_PATH = true;
 var SUBDIVISE_NOGO = 16; // decrease to subdivise more
 var DEBUG_FLAG = false;
@@ -61,6 +62,9 @@ var noGoTopLeft, noGoBottomRight;
 
 var boundingBoxes;
 
+var typedText = '';
+
+/** Shoud shadows be drawn at next render (alternates every frame) */
 var drawShadow = true;
 
 opentype.load('fonts/' + FONT, function(err, font) {
@@ -74,9 +78,18 @@ window.setTimeout(displayMessage, MESSAGE_APPEARANCE_DELAY);
 
 window.addEventListener( 'resize', init, false );
 document.body.addEventListener('click', init, true);
+document.body.addEventListener('keyup', onKeyUp);
+document.body.addEventListener('keydown', onKeyDown);
 
 
 function init() {
+  var text = TEXT;
+  var cleanPath = CLEAN_PATH;
+  if(typedText) {
+     text = typedText;
+     cleanPath = false;
+  }
+
   // initialize globals
   pointsX = [];
   pointsY = [];
@@ -112,12 +125,32 @@ function init() {
   paintCanvasWithBackground();
 
   initAttractors(ATTRACTOR_RADIUS_MIN, ATTRACTOR_RADIUS_MAX);
-  initTextAttractors(TEXT, CLEAN_PATH);
+  initTextAttractors(text, cleanPath);
   initNoGoZoneTextAttractors();
   initPoints();
 
   colorSize = Math.ceil(pointsX.length / COLORS.length);
   ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
+}
+
+function onKeyUp(e) {
+  if (e.which == 8) {
+    return;
+  } else if (e.which == 13) {
+    typedText = '';
+  } else {
+     typedText += String.fromCharCode(e.which); 
+  }
+  init();
+}
+
+function onKeyDown(e) {
+  if(e.which == 8) {
+     typedText = typedText.slice(0, -1);
+     init();
+     e.preventDefault(); 
+  }
+
 }
 
 function displayMessage() {
