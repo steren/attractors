@@ -1,3 +1,9 @@
+/**
+ * This code is ugly, but made with love by
+ * @author annemenini
+ * @author steren
+ */
+
 var SIZE_SHADOW = 16;
 var SHADOW_IMAGE = 'shadow-o30-ellipse-'
 var SHADOW_OPACITY = 0.03;
