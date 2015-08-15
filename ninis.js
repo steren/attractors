@@ -22,7 +22,7 @@ var TEXT_Y_POSITION_PERCENT = 33;
 var TEXT_ATTRACTOR_RADIUS = 1;
 /** under this width, do not subdivise the quadratic and cubic bezier curves in the text's path */
 var TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
-var PROBABILITY_POINT_APPEARS_NEAR_TEXT = 0.05;
+var PROBABILITY_POINT_APPEARS_NEAR_TEXT = 0.2;
 var RANDOMBACKGROUND = 0.05;
 var GAUSSIAN_PARAM_TEXT = 1/200;
 var ATTRACTOR_RADIUS_MIN = 1/50;
@@ -125,7 +125,7 @@ function init() {
   paintCanvasWithBackground();
 
   initAttractors(ATTRACTOR_RADIUS_MIN, ATTRACTOR_RADIUS_MAX);
-  initTextAttractors(text, cleanPath);
+  initTextAttractors(text, cleanPath, PROBABILITY_POINT_APPEARS_NEAR_TEXT);
   initNoGoZoneTextAttractors();
   initPoints();
   initDrawShadow();
@@ -356,7 +356,7 @@ function initAttractors(min, max) {
   }
 }
 
-function initTextAttractors(text, cleanPath) {
+function initTextAttractors(text, cleanPath, probabilityPointAppearsNearText) { 
   textAttractors = [];
 
   var textPathTopLeft = {x: Infinity, y: Infinity};
@@ -391,6 +391,7 @@ function initTextAttractors(text, cleanPath) {
   var subdiviseBezier = false;
   if(textWidth > TEXT_MIN_WIDTH_TO_SUBDIVISE) {
     subdiviseBezier = true;
+    probabilityPointAppearsNearText = probabilityPointAppearsNearText / 2;
   }
 
   if(cleanPath) {
@@ -430,7 +431,7 @@ function initTextAttractors(text, cleanPath) {
 
       var command1 = path.commands[c];
       // add points near text
-      if( Math.random() < PROBABILITY_POINT_APPEARS_NEAR_TEXT ) {
+      if( Math.random() < probabilityPointAppearsNearText ) {
         pointsX.push(textX + command1.x+Math.random()-0.5);
         pointsY.push(textY + command1.y+Math.random()-0.5);
       }
