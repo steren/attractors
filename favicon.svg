@@ -15,9 +15,9 @@
    version="1.1"
    inkscape:version="0.91 r13725"
    sodipodi:docname="favicon.svg"
-   inkscape:export-filename="/Users/steren/Work/save-the-date/les-ninis/favicon.png"
-   inkscape:export-xdpi="90"
-   inkscape:export-ydpi="90">
+   inkscape:export-filename="/Users/steren/Work/save-the-date/les-ninis/favicon-192.png"
+   inkscape:export-xdpi="540"
+   inkscape:export-ydpi="540">
   <defs
      id="defs4" />
   <sodipodi:namedview
@@ -59,7 +59,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
