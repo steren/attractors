@@ -27,6 +27,7 @@ var GAUSSIAN_PARAM_TEXT = 1/200;
 var ATTRACTOR_RADIUS_MIN = 1/100;
 var ATTRACTOR_RADIUS_MAX = 16 * ATTRACTOR_RADIUS_MIN;
 var DEBUG_FLAG = false;
+var CLEAN_PATH = true;
  
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
 //var FONT = 'Codystar/Codystar-Regular.ttf';
@@ -106,7 +107,7 @@ function init() {
   paintCanvasWithBackground();
 
   initAttractors(ATTRACTOR_RADIUS_MIN, ATTRACTOR_RADIUS_MAX);
-  initTextAttractors(TEXT);
+  initTextAttractors(TEXT, CLEAN_PATH);
   initNoGoZoneTextAttractors();
   initPoints();
 
@@ -292,7 +293,7 @@ function initAttractors(min, max) {
   }
 }
 
-function initTextAttractors(text) {
+function initTextAttractors(text, cleanPath) {
   textAttractors = [];
 
   var textPathTopLeft = {x: Infinity, y: Infinity};
@@ -329,34 +330,35 @@ function initTextAttractors(text) {
     subdiviseBezier = true;
   }
 
-  var useThisCommand = [];
-  // 1
-  useThisCommand.push(0);
-  for(var i=0; i<3; i++) {useThisCommand.push(1);}
-  for(var i=0; i<2; i++) {useThisCommand.push(0);}
-  // 3
-  for(var i=0; i<25; i++) {useThisCommand.push(1);}
-  for(var i=0; i<25; i++) {useThisCommand.push(0);}
-  // 8
-  for(var i=0; i<34; i++) {useThisCommand.push(1);}
-  for(var i=0; i<35; i++) {useThisCommand.push(0);}
-  // 2
-  for(var i=0; i<15; i++) {useThisCommand.push(0);}
-  for(var i=0; i<17; i++) {useThisCommand.push(1);}
-  for(var i=0; i<2; i++) {useThisCommand.push(0);}
-  // 0
-  for(var i=0; i<18; i++) {useThisCommand.push(1);}
-  // 1
-  useThisCommand.push(0);
-  for(var i=0; i<3; i++) {useThisCommand.push(1);}
-  for(var i=0; i<2; i++) {useThisCommand.push(0);}
-  // 6
-  for(var i=0; i<21; i++) {useThisCommand.push(1);}
-  for(var i=0; i<21; i++) {useThisCommand.push(0);}
-
+  if(cleanPath) {
+    var useThisCommand = [];
+    // 1
+    useThisCommand.push(0);
+    for(var i=0; i<3; i++) {useThisCommand.push(1);}
+    for(var i=0; i<2; i++) {useThisCommand.push(0);}
+    // 3
+    for(var i=0; i<25; i++) {useThisCommand.push(1);}
+    for(var i=0; i<25; i++) {useThisCommand.push(0);}
+    // 8
+    for(var i=0; i<34; i++) {useThisCommand.push(1);}
+    for(var i=0; i<35; i++) {useThisCommand.push(0);}
+    // 2
+    for(var i=0; i<15; i++) {useThisCommand.push(0);}
+    for(var i=0; i<17; i++) {useThisCommand.push(1);}
+    for(var i=0; i<2; i++) {useThisCommand.push(0);}
+    // 0
+    for(var i=0; i<18; i++) {useThisCommand.push(1);}
+    // 1
+    useThisCommand.push(0);
+    for(var i=0; i<3; i++) {useThisCommand.push(1);}
+    for(var i=0; i<2; i++) {useThisCommand.push(0);}
+    // 6
+    for(var i=0; i<21; i++) {useThisCommand.push(1);}
+    for(var i=0; i<21; i++) {useThisCommand.push(0);}
+  }
 
   for( var c = 0; c < (path.commands.length-1); c++) {
-    if(useThisCommand[c]==1 && useThisCommand[c+1]==1) {
+    if(!cleanPath || (useThisCommand[c]==1 && useThisCommand[c+1]==1)) {
       var command2 = path.commands[c+1];
       var commandToExecute = command2.type;
       if(!subdiviseBezier && (command2.type=="C" || command2.type=="Q")) {
