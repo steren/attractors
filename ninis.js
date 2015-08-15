@@ -329,7 +329,34 @@ function initTextAttractors(text) {
     subdiviseBezier = true;
   }
 
+  var useThisCommand = [];
+  // 1
+  useThisCommand.push(0);
+  for(var i=0; i<3; i++) {useThisCommand.push(1);}
+  for(var i=0; i<2; i++) {useThisCommand.push(0);}
+  // 3
+  for(var i=0; i<25; i++) {useThisCommand.push(1);}
+  for(var i=0; i<25; i++) {useThisCommand.push(0);}
+  // 8
+  for(var i=0; i<34; i++) {useThisCommand.push(1);}
+  for(var i=0; i<35; i++) {useThisCommand.push(0);}
+  // 2
+  for(var i=0; i<15; i++) {useThisCommand.push(0);}
+  for(var i=0; i<17; i++) {useThisCommand.push(1);}
+  for(var i=0; i<2; i++) {useThisCommand.push(0);}
+  // 0
+  for(var i=0; i<18; i++) {useThisCommand.push(1);}
+  // 1
+  useThisCommand.push(0);
+  for(var i=0; i<3; i++) {useThisCommand.push(1);}
+  for(var i=0; i<2; i++) {useThisCommand.push(0);}
+  // 6
+  for(var i=0; i<21; i++) {useThisCommand.push(1);}
+  for(var i=0; i<21; i++) {useThisCommand.push(0);}
+
+
   for( var c = 0; c < (path.commands.length-1); c++) {
+    if(useThisCommand[c]==1 && useThisCommand[c+1]==1) {
       var command2 = path.commands[c+1];
       var commandToExecute = command2.type;
       if(!subdiviseBezier && (command2.type=="C" || command2.type=="Q")) {
@@ -355,7 +382,7 @@ function initTextAttractors(text) {
 
           // if a real L (line)
           if(command2.type == "L") {
-            if( Math.random() < 0.5 ) {
+            if( Math.random() < 1 ) {
               pointsX.push(textX + command1.x+Math.random()-0.5);
               pointsY.push(textY + command1.y+Math.random()-0.5);
             }
@@ -409,6 +436,7 @@ function initTextAttractors(text) {
       }
 
       //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
+    }
   }
 }
 
