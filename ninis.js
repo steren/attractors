@@ -60,6 +60,8 @@ var noGoTopLeft, noGoBottomRight;
 
 var boundingBoxes;
 
+var drawShadow = true;
+
 opentype.load('fonts/' + FONT, function(err, font) {
   console.log(font);
   loadedFont = font;
@@ -170,9 +172,13 @@ function render(timestamp) {
     ctx.stroke();
   }
 
-  for (var i = 0; i < pointsX.length; i++ ) {
-  ctx.drawImage(shadow, pointsX[i] - DELTA_SHADOW_X * pixelRatio, pointsY[i] - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
+  // draw shadow
+  if(drawShadow) {
+    for (var i = 0; i < pointsX.length; i++ ) {
+      ctx.drawImage(shadow, pointsX[i] - DELTA_SHADOW_X * pixelRatio, pointsY[i] - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
+    }
   }
+  drawShadow = !drawShadow;
 
 }
 
@@ -499,7 +505,7 @@ function initNoGoZoneTextAttractors() {
     P0.y2 = P0.y + (l2/3) * (P2.y - P1.y) / L;
     textBox[i] = P0;
   }
-  
+
   // subdivise Bezier curve to create segments
   for(var i=0; i<n; i++) {
     var PS = textBox[i];

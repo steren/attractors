@@ -9,27 +9,17 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="744.09448819"
-   height="1052.3622047"
+   width="32"
+   height="32"
    id="svg2"
    version="1.1"
-   inkscape:version="0.48.0 r9654"
-   sodipodi:docname="New document 1">
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="favicon.svg"
+   inkscape:export-filename="/Users/steren/Work/save-the-date/les-ninis/favicon.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
   <defs
-     id="defs4">
-    <filter
-       inkscape:collect="always"
-       id="filter3814"
-       x="-0.14274994"
-       width="1.2854999"
-       y="-0.11152045"
-       height="1.2230409">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="1.2177055"
-         id="feGaussianBlur3816" />
-    </filter>
-  </defs>
+     id="defs4" />
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -38,16 +28,29 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="11.2"
-     inkscape:cx="178.0689"
-     inkscape:cy="580.53964"
+     inkscape:cx="12.966714"
+     inkscape:cy="19.682497"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
-     showgrid="false"
-     inkscape:window-width="1920"
-     inkscape:window-height="1018"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1" />
+     showgrid="true"
+     inkscape:window-width="1676"
+     inkscape:window-height="1005"
+     inkscape:window-x="4"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:snap-bbox="true"
+     inkscape:bbox-nodes="true"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid4286"
+       empspacing="8"
+       originx="-192"
+       originy="-568" />
+  </sodipodi:namedview>
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -63,40 +66,57 @@
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(-192,-452.36218)">
     <rect
        style="fill:#57a3bd;fill-opacity:1;fill-rule:evenodd;stroke:none"
        id="rect2985"
        width="32"
        height="32"
-       x="200"
-       y="466.07645"
+       x="192"
+       y="452.36218"
        inkscape:export-filename="C:\Users\Anne Menini\Documents\save_the_date\les-ninis\favicon.png"
        inkscape:export-xdpi="90"
        inkscape:export-ydpi="90" />
-    <text
-       sodipodi:linespacing="125%"
-       id="text3770"
-       y="494.36536"
-       x="204.4126"
-       style="font-size:35.47235488999999800px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#252a2b;fill-opacity:1;stroke:#252a2b;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;font-family:Calibri;-inkscape-font-specification:Calibri;opacity:0.63274335999999998;filter:url(#filter3814)"
-       xml:space="preserve"><tspan
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#252a2b;fill-opacity:1;stroke:#252a2b;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;font-family:Kristen ITC;-inkscape-font-specification:Kristen ITC"
-         y="494.36536"
-         x="204.4126"
-         id="tspan3772"
-         sodipodi:role="line">&amp;</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:35.47235489px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#dbcec1;fill-opacity:1;stroke:none;font-family:Calibri;-inkscape-font-specification:Calibri"
-       x="204.4126"
-       y="494.36536"
-       id="text3766"
-       sodipodi:linespacing="125%"><tspan
-         sodipodi:role="line"
-         id="tspan3768"
-         x="204.4126"
-         y="494.36536"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#dbcec1;fill-opacity:1;font-family:Kristen ITC;-inkscape-font-specification:Kristen ITC">&amp;</tspan></text>
+    <rect
+       style="fill:#252a2b;fill-opacity:1;fill-rule:evenodd;stroke:none"
+       id="rect2985-8"
+       width="32"
+       height="4.0000024"
+       x="192"
+       y="480.36218"
+       inkscape:export-filename="C:\Users\Anne Menini\Documents\save_the_date\les-ninis\favicon.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       style="fill:#96d5eb;fill-opacity:1;fill-rule:evenodd;stroke:none"
+       id="rect2985-8-1"
+       width="32"
+       height="8.0000029"
+       x="192"
+       y="460.36218"
+       inkscape:export-filename="C:\Users\Anne Menini\Documents\save_the_date\les-ninis\favicon.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       style="fill:#dbcec1;fill-opacity:1;fill-rule:evenodd;stroke:none"
+       id="rect2985-8-1-5"
+       width="32"
+       height="3.9999974"
+       x="192"
+       y="452.36218"
+       inkscape:export-filename="C:\Users\Anne Menini\Documents\save_the_date\les-ninis\favicon.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       style="fill:#f7f6f5;fill-opacity:1;fill-rule:evenodd;stroke:none"
+       id="rect2985-8-1-5-0"
+       width="32"
+       height="4"
+       x="192"
+       y="456.36218"
+       inkscape:export-filename="C:\Users\Anne Menini\Documents\save_the_date\les-ninis\favicon.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
   </g>
 </svg>
