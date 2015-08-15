@@ -26,8 +26,10 @@ var RANDOMBACKGROUND = 0.05;
 var GAUSSIAN_PARAM_TEXT = 1/200;
 var ATTRACTOR_RADIUS_MIN = 1/100;
 var ATTRACTOR_RADIUS_MAX = 16 * ATTRACTOR_RADIUS_MIN;
-var DEBUG_FLAG = false;
 var CLEAN_PATH = true;
+var SUBDIVISE_NOGO = 16; // decrease to subdivise more
+var DEBUG_FLAG = false;
+
  
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
 //var FONT = 'Codystar/Codystar-Regular.ttf';
@@ -455,6 +457,7 @@ function initNoGoZoneTextAttractors() {
 
   noGoZone = [];
 
+  // define no go zone via a few points
   var textBox = [];
   textBox.push({
     x: (canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 2) * (1 - Math.random() * 2 * RANDOMBACKGROUND), 
@@ -482,6 +485,7 @@ function initNoGoZoneTextAttractors() {
     x1:0, y1:0, x2:0, y2:0});
   var n = textBox.length;
 
+  // compute the Bezier handle
   for(var i=0; i<n; i++) {
     var P1 = textBox[(i-1+n)%n];
     var P0 = textBox[i];
@@ -495,12 +499,14 @@ function initNoGoZoneTextAttractors() {
     P0.y2 = P0.y + (l2/3) * (P2.y - P1.y) / L;
     textBox[i] = P0;
   }
+  
+  // subdivise Bezier curve to create segments
   for(var i=0; i<n; i++) {
     var PS = textBox[i];
     var PE = textBox[(i+1)%n];
     var L = Math.sqrt(Math.pow(PE.x - PS.x, 2) + Math.pow(PE.y - PS.y, 2));
     var T = [];
-    var nT = Math.ceil(L/10);
+    var nT = Math.ceil(L/SUBDIVISE_NOGO);
     for(var k=0; k<nT; k++) {
       T.push(k/(nT-1));
     }
