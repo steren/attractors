@@ -70,9 +70,31 @@
 	</div>
 
 	<canvas id="paint-canvas"></canvas>
-	
+
+	<script src="/lib/dat.gui.js"></script>	
 	<script src="/lib/opentype.js"></script>
+	<!--
+	<script src="/lib/dat.gui.min.js"></script>	
+	<script src="/lib/opentype.min.js"></script>
+	-->
+
+	<script type="text/javascript">
+	  var config = {
+			  text: '13   8   2016',
+			  background_color: '#57A3BD'
+			}
+	</script>
+	
 	<script src="ninis.js"></script>
+
+	<script type="text/javascript">
+	  var gui = new dat.GUI();
+	  gui.add(config, 'text').onChange(init);
+	  gui.addColor(config, 'background_color').onChange(init);
+	</script>
+
+
+
 </body>
 
 <script>

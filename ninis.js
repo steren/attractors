@@ -19,9 +19,7 @@ var STROKE_LINE_WIDTH = 0.35;
 // The speed would result in bad results on low framerate.
 var STEP_DISTANCE = 1;
 var COLORS = ['#DBCEC1', '#F7F6F5'];
-var BACKGROUND_COLOR = '#57A3BD';
 var MESSAGE_APPEARANCE_DELAY = 8 * 1000;
-var TEXT = '13   8   2016';
 var TEXT_FONT_SIZE_SCREEN_WIDTH_RATIO = 12;
 var TEXT_X_POSITION_PERCENT = 50;
 var TEXT_Y_POSITION_PERCENT = 33;
@@ -34,7 +32,7 @@ var GAUSSIAN_PARAM_TEXT = 1/200;
 var ATTRACTOR_RADIUS_MIN = 1/50;
 var ATTRACTOR_RADIUS_MAX = 16 * ATTRACTOR_RADIUS_MIN;
 /** Should ther text path be cleaned by duplicate vertices */
-var CLEAN_PATH = true;
+var CLEAN_PATH = false;
 var SUBDIVISE_NOGO = 16; // decrease to subdivise more
 var DEBUG_FLAG = false;
 
@@ -83,12 +81,16 @@ window.setTimeout(displayMessage, MESSAGE_APPEARANCE_DELAY);
 
 window.addEventListener( 'resize', init, false );
 document.body.addEventListener('click', init, true);
-document.body.addEventListener('keyup', onKeyUp);
-document.body.addEventListener('keydown', onKeyDown);
+//document.body.addEventListener('keyup', onKeyUp);
+//document.body.addEventListener('keydown', onKeyDown);
 
 
 function init() {
-  var text = TEXT;
+  initialize(config);
+}
+
+function initialize(config) {
+  var text = config.text;
   var cleanPath = CLEAN_PATH;
   if(typedText) {
      text = typedText;
@@ -185,7 +187,7 @@ function resizeCanvasToWindow() {
 }
 
 function paintCanvasWithBackground() {
-  ctx.fillStyle = BACKGROUND_COLOR;
+  ctx.fillStyle = config.background_color;
   ctx.fillRect(0, 0, canvasRealWidth, canvasRealHeight);
 }
 
