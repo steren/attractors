@@ -109,11 +109,14 @@
 
 
 	<script type="text/javascript">
-		function displayMessage() {
-			var message = document.getElementById('message');
-			message.className = 'visible';
-		}
-		window.setTimeout(displayMessage, 8 * 1000);
+		var message = document.getElementById('message');
+		window.setTimeout(function () {
+	      message.className = 'visible';
+		}, 8 * 1000);
+
+		message.addEventListener('click', function() {
+			message.style.visibility = 'hidden';
+		});
 
 		function refreshGUI() {
 		  console.log(textInput);
