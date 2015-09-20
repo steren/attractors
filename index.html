@@ -139,11 +139,13 @@
 		}
 
 		function onKeyDown(e) {
-
 		  if(e.which == 8) { // Backspace
 			 config.text = config.text.slice(0, -1);
 			 init();
-			 e.preventDefault();
+			 // if we are in an input, do not preventDefault
+			 if(event.target.tagName.toUpperCase() != 'INPUT') {
+			 	e.preventDefault();
+			 }
 		  }
 		  refreshGUI();
 		}
