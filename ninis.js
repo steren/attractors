@@ -4,25 +4,18 @@
  * @author steren
  */
 
+var DEBUG_FLAG = false;
+
 var SIZE_SHADOW = 16;
 var SHADOW_IMAGE = 'shadow-o30-ellipse-'
 var SHADOW_OPACITY = 0.03;
 var DELTA_SHADOW_X = 1;
 var DELTA_SHADOW_Y = 1;
-var NB_ATTRACTORS = 25;
 var NEW_SEED_CREATION_PROBABILITY = 0;
-/** number of particule for a square of 1000 * 1000 pixels */
-var PARTICULE_DENSITY = 900;
-var STROKE_LINE_WIDTH = 0.35;
 /** Distance to move the points at each frame. */
 // Note: We prefer using a constant distance per frame rather than defining a speed.
 // The speed would result in bad results on low framerate.
 var STEP_DISTANCE = 1;
-var COLORS = ['#DBCEC1', '#F7F6F5'];
-var MESSAGE_APPEARANCE_DELAY = 8 * 1000;
-var TEXT_FONT_SIZE_SCREEN_WIDTH_RATIO = 12;
-var TEXT_X_POSITION_PERCENT = 50;
-var TEXT_Y_POSITION_PERCENT = 33;
 var TEXT_ATTRACTOR_RADIUS = 1;
 /** under this width, do not subdivise the quadratic and cubic bezier curves in the text's path */
 var TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
@@ -31,13 +24,7 @@ var RANDOMBACKGROUND = 0.05;
 var GAUSSIAN_PARAM_TEXT = 1/200;
 var ATTRACTOR_RADIUS_MIN = 1/50;
 var ATTRACTOR_RADIUS_MAX = 16 * ATTRACTOR_RADIUS_MIN;
-/** Should ther text path be cleaned by duplicate vertices */
-var CLEAN_PATH = false;
 var SUBDIVISE_NOGO = 16; // decrease to subdivise more
-var DEBUG_FLAG = false;
-var TEXT_FLAG = true;
-var NOGOZONE_FLAG = true;
-
 
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
 //var FONT = 'Codystar/Codystar-Regular.ttf';
@@ -48,6 +35,8 @@ var shadow;
 var pixelRatio;
 var colorSize;
 
+var colors;
+
 var pointsX, pointsY;
 var canvasScreenWidth, canvasScreenHeight;
 var canvasRealWidth, canvasRealHeight;
@@ -56,6 +45,7 @@ var drawShadowAtPoint;
 
 var attractors;
 var textAttractors;
+var hasNogoZone;
 var noGoZone;
 
 var loadedFont;
@@ -65,7 +55,7 @@ var D;
 
 /** bounding box of the main text */
 var textTopLeft, textBottomRight;
-/** bounding box of the no GO Zone */
+/** bounding box of the nogo Zone */
 var noGoTopLeft, noGoBottomRight;
 
 /** Array of bounding boxes **/
@@ -80,27 +70,26 @@ opentype.load('fonts/' + FONT, function(err, font) {
   animate();
 });
 
-window.setTimeout(displayMessage, MESSAGE_APPEARANCE_DELAY);
-
 window.addEventListener( 'resize', init, false );
-document.body.addEventListener('click', init, true);
-//document.body.addEventListener('keyup', onKeyUp);
-//document.body.addEventListener('keydown', onKeyDown);
-
 
 function init() {
   initialize(config);
 }
 
 function initialize(config) {
+  colors = []
+  colors.push(config.color1);
+  colors.push(config.color2);
+
   boundingBoxes = [];
 
-  if(TEXT_FLAG) {
+  // if text string is empty, do not consider text attractors at all
+  if(config.text) {
     var text = config.text;
-    var cleanPath = CLEAN_PATH;
-    if(typedText) {
-      text = typedText;
-      cleanPath = false;
+    var cleanPath = false;
+    // set cleanPath to true is the text corresponds to the clean textAttractor
+    if(text == '13   8   2016') {
+      cleanPath = true;
     }
     textTopLeft = {};
     textBottomRight = {};
@@ -115,7 +104,8 @@ function initialize(config) {
   pointsY = [];
   drawShadowAtPoint = [];
 
-  if(NOGOZONE_FLAG) {
+  hasNogoZone = config.nogo_zone;
+  if(hasNogoZone) {
     noGoTopLeft = {};
     noGoBottomRight = {};
     boundingBoxes.push({
@@ -136,52 +126,20 @@ function initialize(config) {
 
   paintCanvasWithBackground();
 
-  initAttractors(ATTRACTOR_RADIUS_MIN, ATTRACTOR_RADIUS_MAX);
+  initAttractors(config.nb_attractors, ATTRACTOR_RADIUS_MIN, ATTRACTOR_RADIUS_MAX);
   textAttractors = [];
-  if(TEXT_FLAG) {
-    initTextAttractors(text, cleanPath, PROBABILITY_POINT_APPEARS_NEAR_TEXT);
+  if(config.text) {
+    initTextAttractors(text, {x: config.text_position_x, y: config.text_position_y}, config.text_width_ratio, cleanPath, PROBABILITY_POINT_APPEARS_NEAR_TEXT);
   }
   noGoZone = [];
-  if(NOGOZONE_FLAG) {
+  if(hasNogoZone) {
     initNoGoZoneTextAttractors();
   }
-  initPoints();
+  initPoints(config.particule_density);
   initDrawShadow();
 
-  colorSize = Math.ceil(pointsX.length / COLORS.length);
-  ctx.lineWidth = STROKE_LINE_WIDTH * pixelRatio;
-}
-
-function onKeyUp(e) {
-  if (e.which == 13) { // Enter
-    init();
-  } else if (e.which == 8) { // Backspace
-    return;
-  } else if (e.which == 27) { // Escape
-    typedText = '';
-    init();
-  } else { // any char or space
-    var typedChar = String.fromCharCode(e.which);
-    if(typedChar.match(/[a-zA-Z\s/]/)) {
-      typedText += typedChar;
-      init();
-    }
-  }
-
-}
-
-function onKeyDown(e) {
-  if(e.which == 8) { // Backspace
-     typedText = typedText.slice(0, -1);
-     init();
-     e.preventDefault();
-  }
-
-}
-
-function displayMessage() {
-  var message = document.getElementById('message');
-  message.className = 'visible';
+  colorSize = Math.ceil(pointsX.length / colors.length);
+  ctx.lineWidth = config.line_width * pixelRatio;
 }
 
 function resizeCanvasToWindow() {
@@ -210,9 +168,9 @@ function render(timestamp) {
   // cut the number of points per number of color, and paint all of the same color at once:
   // start a path and add each segment to it, and only then, paint it.
   // This increases performances instead of painting each segment after the other.
-  for(var c = 0; c < COLORS.length; c++) {
+  for(var c = 0; c < colors.length; c++) {
     ctx.beginPath();
-    ctx.strokeStyle = COLORS[c];
+    ctx.strokeStyle = colors[c];
     for (var i = c * colorSize; i < (c+1) * colorSize; i++ ) {
       if( Math.random() < NEW_SEED_CREATION_PROBABILITY ) {
         var newSeed = getPositionOutsideOfTextAttractorGaussian();
@@ -284,8 +242,8 @@ function field(x, y) {
   ux = ux / norm;
   uy = uy / norm;
 
-  // If we are nead the text, add the text contribution to the field
-  if((TEXT_FLAG || NOGOZONE_FLAG) && isNearText(x,y)) {
+  // If we are near the text, add the text contribution to the field
+  if(isNearText(x,y)) {
     var closestTextPoint = findClosestTextPoint(x,y);
     var textUx = (x - closestTextPoint.originX);
     var textUy = (y - closestTextPoint.originY);
@@ -317,10 +275,11 @@ function isNearText(x,y) {
   return false;
 }
 
-function initPoints() {
+/** @param particuleDensity: number of particule for a square of 1000 * 1000 pixels */
+function initPoints(particuleDensity) {
   // for a device with higher pixel ratio, put more particules.
   // but do not put pixelRatio * pixelRatio more particules for performances reasons
-  var nbParticules = pixelRatio * PARTICULE_DENSITY * canvasScreenWidth * canvasScreenHeight / 1000000
+  var nbParticules = pixelRatio * particuleDensity * canvasScreenWidth * canvasScreenHeight / 1000000
   for(var i = 0; i < nbParticules; i++) {
     //var newSeed = getPositionOutsideOfTextAttractorSquare(4/5);
     var newSeed = getPositionOutsideOfTextAttractorGaussian();
@@ -348,7 +307,7 @@ function normalRand() {
 
 
 
-function initAttractors(min, max) {
+function initAttractors(nbAtractors, min, max) {
   attractors = [];
 
   var minW = -1;
@@ -356,7 +315,7 @@ function initAttractors(min, max) {
   var minD = min * D;
   var maxD = max * D;
 
-  for( var a = 0; a < NB_ATTRACTORS; a++) {
+  for( var a = 0; a < nbAtractors; a++) {
     var attractor = {};
     attractor.x = Math.random() * (canvasRealWidth - 1);
     attractor.y = Math.random() * (canvasRealHeight - 1);
@@ -374,11 +333,11 @@ function initAttractors(min, max) {
   }
 }
 
-function initTextAttractors(text, cleanPath, probabilityPointAppearsNearText) {
+function initTextAttractors(text, textPositionPercent, textWidthRatio, cleanPath, probabilityPointAppearsNearText) {
 
   var textPathTopLeft = {x: Infinity, y: Infinity};
   var textPathBottomRight = {x: -Infinity, y: -Infinity};
-  var fontSize = canvasRealWidth / TEXT_FONT_SIZE_SCREEN_WIDTH_RATIO;
+  var fontSize = canvasRealWidth / textWidthRatio;
 
   // measure the size of a single character
   var path = loadedFont.getPath(text, 0, 0, fontSize);
@@ -394,11 +353,11 @@ function initTextAttractors(text, cleanPath, probabilityPointAppearsNearText) {
   }
   var textWidth = textPathBottomRight.x - textPathTopLeft.x;
   var textHeight = textPathBottomRight.y - textPathTopLeft.y;
-  var textX = canvasRealWidth * TEXT_X_POSITION_PERCENT / 100 - textWidth / 2;
-  var textY = canvasRealHeight * TEXT_Y_POSITION_PERCENT / 100 + textHeight / 2;
+  var textX = canvasRealWidth * textPositionPercent.x / 100 - textWidth / 2;
+  var textY = canvasRealHeight * textPositionPercent.y / 100 + textHeight / 2;
 
-  textTopLeft.x = canvasRealWidth * TEXT_X_POSITION_PERCENT / 100 - textWidth / 2;
-  textTopLeft.y = canvasRealHeight * TEXT_Y_POSITION_PERCENT / 100 - textHeight / 2;
+  textTopLeft.x = canvasRealWidth * textPositionPercent.x / 100 - textWidth / 2;
+  textTopLeft.y = canvasRealHeight * textPositionPercent.y / 100 - textHeight / 2;
   textBottomRight.x = textTopLeft.x + textWidth;
   textBottomRight.y = textTopLeft.y + textHeight;
 
@@ -659,7 +618,7 @@ function findClosestTextPoint(x,y) {
 
 
 function isInNoGoZone(x,y) {
-  if(NOGOZONE_FLAG) {
+  if(hasNogoZone) {
     if( x - noGoTopLeft.x > 0
     && x - noGoBottomRight.x < 0
     && y - noGoTopLeft.y > 0

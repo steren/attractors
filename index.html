@@ -61,6 +61,16 @@
 			}
 		}
 
+		#settings {
+			position: absolute;
+			bottom: 0;
+			right: 0;
+			opacity: 0.1;
+			font-size: 2em;
+			cursor: pointer;
+			margin-right: 10px;
+		}
+
 	</style>
 </head>
 <body>
@@ -68,6 +78,8 @@
 		<p class="larger"><span id="main-message">Anne & Steren</span></p>
 		<p>Nancy</p>
 	</div>
+
+	<div id="settings">&#9881;</div>
 
 	<canvas id="paint-canvas"></canvas>
 
@@ -81,18 +93,93 @@
 	<script type="text/javascript">
 	  var config = {
 			  text: '13   8   2016',
-			  background_color: '#57A3BD'
+			  text_position_x: 50,
+			  text_position_y: 33,
+			  text_width_ratio: 12,
+			  background_color: '#57A3BD',
+			  nb_attractors: 25,
+			  particule_density: 900,
+			  line_width: 0.35,
+			  nogo_zone: true,
+			  color1: '#DBCEC1',
+			  color2: '#F7F6F5',
 			}
-	</script>
-	
+	</script>	
 	<script src="ninis.js"></script>
 
+
+	<script type="text/javascript">
+		function displayMessage() {
+			var message = document.getElementById('message');
+			message.className = 'visible';
+		}
+		window.setTimeout(displayMessage, 8 * 1000);
+
+		function refreshGUI() {
+		  console.log(textInput);
+  		  textInput.updateDisplay();
+		}
+
+		function onKeyUp(e) {
+		  if (e.which == 13) { // Enter
+			init();
+		  } else if (e.which == 8) { // Backspace
+			return;
+		  } else if (e.which == 27) { // Escape
+			config.text = '';
+			init();
+		  } else { // any char or space
+			var typedChar = String.fromCharCode(e.which);
+			if(typedChar.match(/[a-zA-Z\s/]/)) {
+			  config.text += typedChar;
+			  init();
+			}
+		  }
+		  refreshGUI();
+		}
+
+		function onKeyDown(e) {
+
+		  if(e.which == 8) { // Backspace
+			 config.text = config.text.slice(0, -1);
+			 init();
+			 e.preventDefault();
+		  }
+		  refreshGUI();
+		}
+		document.body.addEventListener('keyup', onKeyUp);
+		document.body.addEventListener('keydown', onKeyDown);
+
+		document.getElementById("paint-canvas").addEventListener('click', init, true);
+	</script>
+	
 	<script type="text/javascript">
 	  var gui = new dat.GUI();
-	  gui.add(config, 'text').onChange(init);
-	  gui.addColor(config, 'background_color').onChange(init);
-	</script>
+	  gui.domElement.style.visibility = 'hidden';
+	  dat.GUI.toggleHide();
+	  gui.remember(config);
 
+	  gui.addColor(config, 'background_color').onChange(init);
+	  gui.add(config, 'nb_attractors', 0, 500).onChange(init);
+	  gui.add(config, 'particule_density', 0, 3000).onChange(init);
+	  gui.add(config, 'nogo_zone').onChange(init);
+
+	  var textFolder = gui.addFolder('Text');
+	  var textInput = textFolder.add(config, 'text').onChange(init);
+	  textFolder.add(config, 'text_width_ratio', 0, 50).onChange(init);
+	  textFolder.add(config, 'text_position_x', 0, 100).onChange(init);
+	  textFolder.add(config, 'text_position_y', 0, 100).onChange(init);
+
+	  var lineFolder = gui.addFolder('Lines');
+	  lineFolder.add(config, 'line_width', 0, 5).onChange(init);
+	  lineFolder.addColor(config, 'color1').onChange(init);
+	  lineFolder.addColor(config, 'color2').onChange(init);
+
+	  document.getElementById("settings").addEventListener('click', function() {
+	  	gui.domElement.style.visibility = 'visible';
+	    dat.GUI.toggleHide();
+	  });
+	</script>
 
 
 </body>
