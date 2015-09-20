@@ -35,8 +35,10 @@ var ATTRACTOR_RADIUS_MAX = 16 * ATTRACTOR_RADIUS_MIN;
 var CLEAN_PATH = false;
 var SUBDIVISE_NOGO = 16; // decrease to subdivise more
 var DEBUG_FLAG = false;
+var TEXT_FLAG = true;
+var NOGOZONE_FLAG = true;
 
- 
+
 var FONT = 'CamBam/1CamBam_Stick_2.ttf';
 //var FONT = 'Codystar/Codystar-Regular.ttf';
 //var FONT = 'Fredoka_One/FredokaOne-Regular.ttf';
@@ -66,6 +68,7 @@ var textTopLeft, textBottomRight;
 /** bounding box of the no GO Zone */
 var noGoTopLeft, noGoBottomRight;
 
+/** Array of bounding boxes **/
 var boundingBoxes;
 
 var typedText = '';
@@ -90,11 +93,21 @@ function init() {
 }
 
 function initialize(config) {
-  var text = config.text;
-  var cleanPath = CLEAN_PATH;
-  if(typedText) {
-     text = typedText;
-     cleanPath = false;
+  boundingBoxes = [];
+
+  if(TEXT_FLAG) {
+    var text = config.text;
+    var cleanPath = CLEAN_PATH;
+    if(typedText) {
+      text = typedText;
+      cleanPath = false;
+    }
+    textTopLeft = {};
+    textBottomRight = {};
+    boundingBoxes.push({
+      topleft: textTopLeft,
+      bottomright: textBottomRight
+    });
   }
 
   // initialize globals
@@ -102,21 +115,14 @@ function initialize(config) {
   pointsY = [];
   drawShadowAtPoint = [];
 
-  textTopLeft = {};
-  textBottomRight = {};
-
-  noGoTopLeft = {};
-  noGoBottomRight = {};
-
-  boundingBoxes = [];
-  boundingBoxes.push({
-    topleft: textTopLeft,
-    bottomright: textBottomRight
-  });
-  boundingBoxes.push({
-    topleft: noGoTopLeft,
-    bottomright: noGoBottomRight
-  });
+  if(NOGOZONE_FLAG) {
+    noGoTopLeft = {};
+    noGoBottomRight = {};
+    boundingBoxes.push({
+      topleft: noGoTopLeft,
+      bottomright: noGoBottomRight
+    });
+  }
 
   pixelRatio = window.devicePixelRatio || 1;
 
@@ -128,13 +134,17 @@ function initialize(config) {
   shadow = new Image();
   shadow.src = SHADOW_IMAGE + SIZE_SHADOW + 'px.png';
 
-
-
   paintCanvasWithBackground();
 
   initAttractors(ATTRACTOR_RADIUS_MIN, ATTRACTOR_RADIUS_MAX);
-  initTextAttractors(text, cleanPath, PROBABILITY_POINT_APPEARS_NEAR_TEXT);
-  initNoGoZoneTextAttractors();
+  textAttractors = [];
+  if(TEXT_FLAG) {
+    initTextAttractors(text, cleanPath, PROBABILITY_POINT_APPEARS_NEAR_TEXT);
+  }
+  noGoZone = [];
+  if(NOGOZONE_FLAG) {
+    initNoGoZoneTextAttractors();
+  }
   initPoints();
   initDrawShadow();
 
@@ -164,7 +174,7 @@ function onKeyDown(e) {
   if(e.which == 8) { // Backspace
      typedText = typedText.slice(0, -1);
      init();
-     e.preventDefault(); 
+     e.preventDefault();
   }
 
 }
@@ -275,7 +285,7 @@ function field(x, y) {
   uy = uy / norm;
 
   // If we are nead the text, add the text contribution to the field
-  if(isNearText(x,y)) {
+  if((TEXT_FLAG || NOGOZONE_FLAG) && isNearText(x,y)) {
     var closestTextPoint = findClosestTextPoint(x,y);
     var textUx = (x - closestTextPoint.originX);
     var textUy = (y - closestTextPoint.originY);
@@ -295,7 +305,7 @@ function field(x, y) {
 
 function isNearText(x,y) {
   var near = D/8;
-  
+
   for(var b = 0; b < boundingBoxes.length; b++) {
     if( x - (boundingBoxes[b].topleft.x - near) > 0
       && x - (boundingBoxes[b].bottomright.x + near) < 0
@@ -364,8 +374,7 @@ function initAttractors(min, max) {
   }
 }
 
-function initTextAttractors(text, cleanPath, probabilityPointAppearsNearText) { 
-  textAttractors = [];
+function initTextAttractors(text, cleanPath, probabilityPointAppearsNearText) {
 
   var textPathTopLeft = {x: Infinity, y: Infinity};
   var textPathBottomRight = {x: -Infinity, y: -Infinity};
@@ -515,7 +524,7 @@ function initTextAttractors(text, cleanPath, probabilityPointAppearsNearText) {
 }
 
 
-function initNoGoZoneTextAttractors() {  
+function initNoGoZoneTextAttractors() {
 
   noGoTopLeft.x = Infinity;
   noGoTopLeft.y = Infinity;
@@ -525,33 +534,31 @@ function initNoGoZoneTextAttractors() {
   var message = document.getElementById('message');
   var mainMessage = document.getElementById('main-message');
 
-  noGoZone = [];
-
   // define no go zone via a few points
   var textBox = [];
   textBox.push({
-    x: (canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 2) * (1 - Math.random() * 2 * RANDOMBACKGROUND), 
-    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (1 - Math.random() * RANDOMBACKGROUND), 
+    x: (canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 2) * (1 - Math.random() * 2 * RANDOMBACKGROUND),
+    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (1 - Math.random() * RANDOMBACKGROUND),
     x1:0, y1:0, x2:0, y2:0});
 
   textBox.push({
-    x: (canvasRealWidth / 2 ) * (1 - Math.random() * RANDOMBACKGROUND), 
-    y: (canvasRealHeight - message.offsetHeight * pixelRatio), 
+    x: (canvasRealWidth / 2 ) * (1 - Math.random() * RANDOMBACKGROUND),
+    y: (canvasRealHeight - message.offsetHeight * pixelRatio),
     x1:0, y1:0, x2:0, y2:0});
 
   textBox.push({
-    x: (canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 2) * (1 + Math.random() * 2 * RANDOMBACKGROUND), 
-    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (1 - Math.random() * RANDOMBACKGROUND), 
+    x: (canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 2) * (1 + Math.random() * 2 * RANDOMBACKGROUND),
+    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (1 - Math.random() * RANDOMBACKGROUND),
     x1:0, y1:0, x2:0, y2:0});
 
   textBox.push({
-    x: randomIntFromInterval(canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 4, 3 * canvasRealWidth / 4), 
-    y: canvasRealHeight, 
+    x: randomIntFromInterval(canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 4, 3 * canvasRealWidth / 4),
+    y: canvasRealHeight,
     x1:0, y1:0, x2:0, y2:0});
-    
+
   textBox.push({
-    x: randomIntFromInterval(canvasRealWidth / 4, canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 4), 
-    y: canvasRealHeight, 
+    x: randomIntFromInterval(canvasRealWidth / 4, canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 4),
+    y: canvasRealHeight,
     x1:0, y1:0, x2:0, y2:0});
   var n = textBox.length;
 
@@ -652,11 +659,16 @@ function findClosestTextPoint(x,y) {
 
 
 function isInNoGoZone(x,y) {
-  if( x - noGoTopLeft.x > 0
-  && x - noGoBottomRight.x < 0
-  && y - noGoTopLeft.y > 0
-  && y - noGoBottomRight.y < 0) {
-    return true;
+  if(NOGOZONE_FLAG) {
+    if( x - noGoTopLeft.x > 0
+    && x - noGoBottomRight.x < 0
+    && y - noGoTopLeft.y > 0
+    && y - noGoBottomRight.y < 0) {
+      return true;
+    }
+  }
+  else{
+    return false;
   }
   return false;
 }
