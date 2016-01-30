@@ -115,6 +115,9 @@ function initialize(config) {
   }
 
   pixelRatio = window.devicePixelRatio || 1;
+  if(config.custom_pxlratio) {
+    pixelRatio = config.pixelratio;
+  } 
 
   canvas = document.getElementById("paint-canvas");
   ctx = canvas.getContext("2d", {alpha : false});
