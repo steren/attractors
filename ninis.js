@@ -50,7 +50,10 @@ var noGoZone;
 
 var loadedFont;
 
-// characteristic distance of the image
+/** Stores strings of SVG paths (when config.svg is true)n*/
+var svgPathArray;
+
+/** characteristic distance of the image */
 var D;
 
 /** bounding box of the main text */
@@ -143,7 +146,16 @@ function initialize(config) {
 
   colorSize = Math.ceil(pointsX.length / colors.length);
   ctx.lineWidth = config.line_width * pixelRatio;
+
+  if(config.svg) {
+    // generate empty strings for SVG paths
+    svgPathArray = [];
+    for(var p = 0; p < pointsX.length; p++) {
+      svgPathArray.push('');
+    }
+  }
 }
+
 
 function resizeCanvasToWindow() {
   canvasScreenWidth = window.innerWidth;
@@ -191,6 +203,12 @@ function render(timestamp) {
       }
     }
     ctx.stroke();
+  }
+
+  if(config.svg) {
+    for(var p = 0; p < pointsX.length; p++) {
+      svgPathArray[p] += ['L', pointsX[p], ' ', pointsY[p], ' '].join('');
+    }
   }
 
   // draw shadow
@@ -719,5 +737,16 @@ function bezier(T, X) {
 
 function randomIntFromInterval(min,max)
 {
-    return Math.floor(Math.random()*(max-min+1)+min);
+  return Math.floor(Math.random()*(max-min+1)+min);
+}
+
+function generateSVG() {
+
+  var svgcontent = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ", canvasRealWidth , " ", canvasRealHeight, "' width='", canvasRealWidth, "' height='", canvasRealHeight, "'>\n"].join('');
+  for(var s = 0; s < svgPathArray.length - 1; s++) {
+    svgcontent += ["<path fill='none' stroke='black' stroke-width='", config.line_width * pixelRatio, "' d='M", svgPathArray[s].substring(1), "' />\n"].join('');
+  }
+  svgcontent += "</svg>";
+
+  console.log(svgcontent);
 }

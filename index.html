@@ -105,6 +105,7 @@
 			  color2: '#F7F6F5',
 			  custom_pxlratio: false,
 			  pixelratio: 1,
+			  svg: false,
 			}
 	</script>	
 	<script src="ninis.js"></script>
@@ -185,7 +186,8 @@
 	  var advancedFolder = gui.addFolder('Advanced');
 	  advancedFolder.add(config, 'custom_pxlratio').onChange(init);
 	  advancedFolder.add(config, 'pixelratio', 1, 6).onChange(init);
-
+	  advancedFolder.add(config, 'svg').onChange(init);
+	  advancedFolder.add({save_svg:false}, 'save_svg').onChange(generateSVG);
 
 	  document.getElementById("settings").addEventListener('click', function() {
 	  	gui.domElement.style.visibility = 'visible';
