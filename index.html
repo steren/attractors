@@ -71,17 +71,26 @@
 			margin-right: 10px;
 		}
 
+		#paint-canvas {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+		}
+
 	</style>
 </head>
 <body>
+
+	<canvas id="paint-canvas"></canvas>
+
 	<div id="message">
 		<p class="larger"><span id="main-message">Anne & Steren</span></p>
 		<p>Nancy</p>
 	</div>
 
 	<div id="settings">&#9881;</div>
-
-	<canvas id="paint-canvas"></canvas>
 
 	<script src="/lib/dat.gui.min.js"></script>	
 	<script src="/lib/opentype.min.js"></script>
@@ -92,7 +101,8 @@
 
 	<script type="text/javascript">
 	  var config = {
-			  text: '13   8   2016',
+	  		  id: 'paint-canvas',
+ 			  text: '13   8   2016',
 			  text_position_x: 50,
 			  text_position_y: 33,
 			  text_width_ratio: 12,
@@ -103,8 +113,7 @@
 			  nogo_zone: true,
 			  color1: '#DBCEC1',
 			  color2: '#F7F6F5',
-			  custom_pxlratio: false,
-			  pixelratio: 1,
+			  pixelratio: window.devicePixelRatio,
 			  svg: false,
 			}
 	</script>	
@@ -184,7 +193,6 @@
 	  lineFolder.addColor(config, 'color2').onChange(init);
 
 	  var advancedFolder = gui.addFolder('Advanced');
-	  advancedFolder.add(config, 'custom_pxlratio').onChange(init);
 	  advancedFolder.add(config, 'pixelratio', 1, 6).onChange(init);
 	  advancedFolder.add(config, 'svg').onChange(init);
 	  advancedFolder.add({save_svg:false}, 'save_svg').onChange(generateSVG);

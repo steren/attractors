@@ -66,12 +66,17 @@ var boundingBoxes;
 
 var typedText = '';
 
-opentype.load('fonts/' + FONT, function(err, font) {
-  console.log(font);
-  loadedFont = font;
+if(config.text) {
+  opentype.load('fonts/' + FONT, function(err, font) {
+    console.log(font);
+    loadedFont = font;
+    init();
+    animate();
+  });
+} else {
   init();
   animate();
-});
+}
 
 window.addEventListener( 'resize', init, false );
 
@@ -117,14 +122,11 @@ function initialize(config) {
     });
   }
 
-  pixelRatio = window.devicePixelRatio || 1;
-  if(config.custom_pxlratio) {
-    pixelRatio = config.pixelratio;
-  } 
+  pixelRatio = config.pixelratio || window.devicePixelRatio || 1;
 
-  canvas = document.getElementById("paint-canvas");
+  canvas = document.getElementById(config.id);
   ctx = canvas.getContext("2d", {alpha : false});
-  resizeCanvasToWindow();
+  resizeCanvas();
   D = Math.max(canvas.width, canvas.height);
 
   shadow = new Image();
@@ -157,16 +159,16 @@ function initialize(config) {
 }
 
 
-function resizeCanvasToWindow() {
-  canvasScreenWidth = window.innerWidth;
-  canvasScreenHeight = window.innerHeight;
+function resizeCanvas() {
+  canvasScreenWidth = canvas.clientWidth;
+  canvasScreenHeight = canvas.clientHeight;
   canvasRealWidth = canvasScreenWidth * pixelRatio;
   canvasRealHeight = canvasScreenHeight * pixelRatio;
 
   canvas.width = canvasRealWidth;
   canvas.height = canvasRealHeight;
-  canvas.style.width = canvasScreenWidth + 'px';
-  canvas.style.height = canvasScreenHeight + 'px';
+  //canvas.style.width = canvasScreenWidth + 'px';
+  //canvas.style.height = canvasScreenHeight + 'px';
 }
 
 function paintCanvasWithBackground() {
