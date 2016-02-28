@@ -102,6 +102,7 @@
 	<script type="text/javascript">
 	  var config = {
 	  		  id: 'paint-canvas',
+	  		  init_scale: 1,
  			  text: '13   8   2016',
 			  text_position_x: 50,
 			  text_position_y: 33,
@@ -179,6 +180,7 @@
 	  gui.addColor(config, 'background_color').onChange(init);
 	  gui.add(config, 'nb_attractors', 0, 500).onChange(init);
 	  gui.add(config, 'particule_density', 0, 3000).onChange(init);
+	  gui.add(config, 'init_scale', 0.01, 1.5).onChange(init);
 	  gui.add(config, 'nogo_zone').onChange(init);
 
 	  var textFolder = gui.addFolder('Text');

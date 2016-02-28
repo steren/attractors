@@ -305,7 +305,8 @@ function initPoints(particuleDensity) {
   var nbParticules = pixelRatio * particuleDensity * canvasScreenWidth * canvasScreenHeight / 1000000
   for(var i = 0; i < nbParticules; i++) {
     //var newSeed = getPositionOutsideOfTextAttractorSquare(4/5);
-    var newSeed = getPositionOutsideOfTextAttractorGaussian();
+    //var newSeed = getPositionOutsideOfTextAttractorGaussian();
+    var newSeed = getPositionOutsideOfTextAttractorGaussian(config.init_scale);
     pointsX.push(newSeed[0]);
     pointsY.push(newSeed[1]);
   }
@@ -658,25 +659,29 @@ function isInNoGoZone(x,y) {
 
 
 function getPositionOutsideOfTextAttractorSquare(sizeRatio) {
+  if(!sizeRatio) {sizeRatio = 1;}
+  return getPositionOutsideOfTextAttractor(Math.random, sizeRatio);
+}
+
+function getPositionOutsideOfTextAttractorGaussian(sizeRatio) {
+  if(!sizeRatio) {sizeRatio = 1;}
+  return getPositionOutsideOfTextAttractor(normalRand, sizeRatio);
+}
+
+/**
+ * @param f: function to use to return point between 0 and 1
+ * @param sizeRatio: scaling factor outside out which nothing will be used
+ */
+function getPositionOutsideOfTextAttractor(f, sizeRatio) {
+  if(!sizeRatio) {sizeRatio = 1;}
   while(true) {
-    var x = push(Math.random() * canvasRealWidth * sizeRatio + canvasRealWidth * ( 1 - sizeRatio) / 2 );
-    var y = push(Math.random() * canvasRealHeight * sizeRatio + canvasRealHeight * ( 1 - sizeRatio) / 2);
+    var x = f() * canvasRealWidth * sizeRatio + canvasRealWidth * ( 1 - sizeRatio) / 2;
+    var y = f() * canvasRealHeight * sizeRatio + canvasRealHeight * ( 1 - sizeRatio) / 2;
     if(!isInNoGoZone(x,y)) {
       return [x, y];
     }
   }
 }
-
-function getPositionOutsideOfTextAttractorGaussian() {
-  while(true) {
-    var x = normalRand() * canvasRealWidth;
-    var y = normalRand() * canvasRealHeight;
-    if(!isInNoGoZone(x,y)) {
-      return [x, y];
-    }
-  }
-}
-
 
 function distanceToSegment(x1, y1, x2, y2, x, y) {
   var l = (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1);
