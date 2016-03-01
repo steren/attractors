@@ -755,5 +755,7 @@ function generateSVG() {
   }
   svgcontent += "</svg>";
 
-  console.log(svgcontent);
+  var data = new Blob([svgcontent], {type: 'image/svg+xml'});
+  var textFile = window.URL.createObjectURL(data);
+  window.open(textFile, 'ninis.svg');
 }
