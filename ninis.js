@@ -755,7 +755,20 @@ function generateSVG() {
   }
   svgcontent += "</svg>";
 
-  var data = new Blob([svgcontent], {type: 'image/svg+xml'});
-  var textFile = window.URL.createObjectURL(data);
-  window.open(textFile, 'ninis.svg');
+  saveSVG(svgcontent, 'ninis.svg');
 }
+
+var saveSVG = (function () {
+    var a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    return function (data, fileName) {
+        var blob = new Blob([data], {type: "image/svg+xml"}),
+            url = window.URL.createObjectURL(blob);
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
+}());
+
