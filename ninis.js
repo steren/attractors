@@ -365,8 +365,6 @@ function initTextAttractors(text, textPositionPercent, textWidthRatio, cleanPath
 
   // measure the size of a single character
   var path = loadedFont.getPath(text, 0, 0, fontSize);
-  console.log(path);
-
 
   // get the bounding box of the text path
   for( var c = 0; c < path.commands.length; c++) {
@@ -747,11 +745,32 @@ function randomIntFromInterval(min,max)
   return Math.floor(Math.random()*(max-min+1)+min);
 }
 
+/**
+ * @param config.one_path: if true, will create ne <path> per line, default to false
+ */
 function generateSVG() {
 
   var svgcontent = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ", canvasRealWidth , " ", canvasRealHeight, "' width='", canvasRealWidth, "' height='", canvasRealHeight, "'>\n"].join('');
+
+  var pathBegin = ["<path fill='none' stroke='black' stroke-width='", config.line_width * pixelRatio, "' d='"].join('');
+  var pathEnd = "' />\n";
+
+  if(config.one_path) {
+    svgcontent += pathBegin;
+  }
+
   for(var s = 0; s < svgPathArray.length - 1; s++) {
-    svgcontent += ["<path fill='none' stroke='black' stroke-width='", config.line_width * pixelRatio, "' d='M", svgPathArray[s].substring(1), "' />\n"].join('');
+    if(!config.one_path) {
+      svgcontent += pathBegin;
+    }
+    svgcontent += ["M", svgPathArray[s].substring(1)].join('');
+    if(!config.one_path) {
+      svgcontent += pathEnd;
+    }
+  }
+
+  if(config.one_path) {
+    svgcontent += pathEnd;
   }
   svgcontent += "</svg>";
 
