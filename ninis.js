@@ -67,7 +67,8 @@ var boundingBoxes;
 var typedText = '';
 
 if(config.text) {
-  opentype.load('fonts/' + FONT, function(err, font) {
+  var folder = config.root || '';
+  opentype.load(folder + 'fonts/' + FONT, function(err, font) {
     console.log(font);
     loadedFont = font;
     init();
@@ -130,7 +131,8 @@ function initialize(config) {
   D = Math.max(canvas.width, canvas.height);
 
   shadow = new Image();
-  shadow.src = SHADOW_IMAGE + SIZE_SHADOW + 'px.png';
+  var folder = config.root || '';
+  shadow.src = folder + SHADOW_IMAGE + SIZE_SHADOW + 'px.png';
 
   paintCanvasWithBackground();
 
