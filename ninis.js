@@ -752,18 +752,22 @@ function randomIntFromInterval(min,max)
  */
 function generateSVG() {
 
-  var svgcontent = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ", canvasRealWidth , " ", canvasRealHeight, "' width='", canvasRealWidth, "' height='", canvasRealHeight, "'>\n"].join('');
-
-  var pathBegin = ["<path fill='none' stroke='black' stroke-width='", config.line_width * pixelRatio, "' d='"].join('');
+  var getPathBegin = function(p) {
+    p = p || 0;
+    var c = Math.floor(p  /  colorSize);
+    return ["<path fill='none' stroke='", colors[c], "' stroke-width='", config.line_width * pixelRatio, "' d='"].join('');
+  }
   var pathEnd = "' />\n";
 
+  var svgcontent = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ", canvasRealWidth , " ", canvasRealHeight, "' width='", canvasRealWidth, "' height='", canvasRealHeight, "' style='background-color: ", config.background_color,";'>\n"].join('');
+
   if(config.one_path) {
-    svgcontent += pathBegin;
+    svgcontent += getPathBegin();
   }
 
   for(var s = 0; s < svgPathArray.length - 1; s++) {
     if(!config.one_path) {
-      svgcontent += pathBegin;
+      svgcontent += getPathBegin(s);
     }
     svgcontent += ["M", svgPathArray[s].substring(1)].join('');
     if(!config.one_path) {
