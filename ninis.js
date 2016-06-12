@@ -219,7 +219,7 @@ function render(timestamp) {
   ctx.globalAlpha = SHADOW_OPACITY;
   for (var i = 0; i < pointsX.length; i++ ) {
     if(drawShadowAtPoint[i]) {
-      ctx.drawImage(shadow, pointsX[i] - DELTA_SHADOW_X * pixelRatio, pointsY[i] - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
+      ctx.drawImage(shadow, pointsX[i] - DELTA_SHADOW_X * pixelRatio, pointsY[i] - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio * config.shadow_scale, SIZE_SHADOW * pixelRatio * config.shadow_scale);
     }
   }
   ctx.globalAlpha = 1.0;

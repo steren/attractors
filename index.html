@@ -78,6 +78,7 @@
 			  pixelratio: window.devicePixelRatio,
 			  svg: false,
 			  one_path: false,
+			  shadow_scale: 1,
 			}
 	</script>	
 	<script src="ninis.js"></script>
@@ -169,6 +170,9 @@
 	  lineFolder.add(config, 'line_width', 0, 5).onChange(init);
 	  lineFolder.addColor(config, 'color1').onChange(init);
 	  lineFolder.addColor(config, 'color2').onChange(init);
+
+	  var lineFolder = gui.addFolder('Shadows');
+	  lineFolder.add(config, 'shadow_scale', 0, 5).onChange(init);
 
 	  var advancedFolder = gui.addFolder('Advanced');
 	  advancedFolder.add(config, 'pixelratio', 1, 10).onChange(init);
