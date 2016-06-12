@@ -508,41 +508,36 @@ function initTextAttractors(text, textPositionPercent, textWidthRatio, cleanPath
 
 
 function initNoGoZoneTextAttractors() {
+  if(!config.nogoParam) {return};
 
   noGoTopLeft.x = Infinity;
   noGoTopLeft.y = Infinity;
   noGoBottomRight.x = -Infinity;
   noGoBottomRight.y = -Infinity;
 
-  var message = document.getElementById('message');
-  var mainMessage = document.getElementById('main-message');
 
   // define no go zone via a few points
   var textBox = [];
   textBox.push({
-    x: (canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 2) * (1 - Math.random() * 2 * RANDOMBACKGROUND),
-    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (1 - Math.random() * RANDOMBACKGROUND),
+    x: config.nogoParam.x * pixelRatio,
+    y: config.nogoParam.y * pixelRatio,
     x1:0, y1:0, x2:0, y2:0});
 
   textBox.push({
-    x: (canvasRealWidth / 2 ) * (1 - Math.random() * RANDOMBACKGROUND),
-    y: (canvasRealHeight - message.offsetHeight * pixelRatio),
+    x: (config.nogoParam.x + config.nogoParam.width) * pixelRatio,
+    y: config.nogoParam.y * pixelRatio,
     x1:0, y1:0, x2:0, y2:0});
 
   textBox.push({
-    x: (canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 2) * (1 + Math.random() * 2 * RANDOMBACKGROUND),
-    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (1 - Math.random() * RANDOMBACKGROUND),
+    x: (config.nogoParam.x + config.nogoParam.width) * pixelRatio,
+    y: (config.nogoParam.y + config.nogoParam.height) * pixelRatio,
     x1:0, y1:0, x2:0, y2:0});
 
   textBox.push({
-    x: randomIntFromInterval(canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 4, 3 * canvasRealWidth / 4),
-    y: canvasRealHeight,
+    x: config.nogoParam.x * pixelRatio,
+    y: (config.nogoParam.y + config.nogoParam.height) * pixelRatio,
     x1:0, y1:0, x2:0, y2:0});
 
-  textBox.push({
-    x: randomIntFromInterval(canvasRealWidth / 4, canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 4),
-    y: canvasRealHeight,
-    x1:0, y1:0, x2:0, y2:0});
   var n = textBox.length;
 
   // compute the Bezier handle

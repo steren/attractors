@@ -36,10 +36,20 @@
 			height: 100%;
 		}
 
+		#nogo {
+			width: 300px;
+  			height: 200px;
+  			top: 100px;
+  			left: 100px;
+  			position: absolute;
+		}
+
 	</style>
 </head>
 <body>
 	<canvas id="paint-canvas"></canvas>
+
+	<div id="nogo"></div>
 
 	<div id="settings">&#9881;</div>
 
@@ -74,6 +84,8 @@
 
 
 	<script type="text/javascript">
+	// Refresh on click and fetch keys
+
 		function refreshGUI() {
 		  console.log(textInput);
   		  textInput.updateDisplay();
@@ -113,8 +125,29 @@
 
 		document.getElementById("paint-canvas").addEventListener('click', init, true);
 	</script>
-	
+
+
 	<script type="text/javascript">
+	// get the position and size of the "nogo" element.
+		function getNoGoElParam() {
+			var nogoEl = document.getElementById('nogo');
+			return {
+				x: nogoEl.offsetLeft,
+				y: nogoEl.offsetTop,
+				width: nogoEl.offsetWidth,
+				height: nogoEl.offsetHeight
+			}
+		}
+
+		function initWithNoGo() {
+			config.nogoParam = getNoGoElParam();
+			init();
+		}
+		
+	</script>
+
+	<script type="text/javascript">
+	// dat.GUI controls
 	  var gui = new dat.GUI();
 	  gui.domElement.style.visibility = 'hidden';
 	  dat.GUI.toggleHide();
@@ -124,7 +157,7 @@
 	  gui.add(config, 'nb_attractors', 0, 500).onChange(init);
 	  gui.add(config, 'particule_density', 0, 3000).onChange(init);
 	  gui.add(config, 'init_scale', 0.01, 1.5).onChange(init);
-	  gui.add(config, 'nogo_zone').onChange(init);
+	  gui.add(config, 'nogo_zone').onChange(initWithNoGo);
 
 	  var textFolder = gui.addFolder('Text');
 	  var textInput = textFolder.add(config, 'text').onChange(init);
