@@ -219,7 +219,7 @@ function render(timestamp) {
   ctx.globalAlpha = SHADOW_OPACITY;
   for (var i = 0; i < pointsX.length; i++ ) {
     if(drawShadowAtPoint[i]) {
-      ctx.drawImage(shadow, pointsX[i] - DELTA_SHADOW_X * pixelRatio, pointsY[i] - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio, SIZE_SHADOW * pixelRatio);
+      ctx.drawImage(shadow, pointsX[i] - DELTA_SHADOW_X * pixelRatio, pointsY[i] - DELTA_SHADOW_Y * pixelRatio, SIZE_SHADOW * pixelRatio * config.shadow_scale, SIZE_SHADOW * pixelRatio * config.shadow_scale);
     }
   }
   ctx.globalAlpha = 1.0;
@@ -508,41 +508,36 @@ function initTextAttractors(text, textPositionPercent, textWidthRatio, cleanPath
 
 
 function initNoGoZoneTextAttractors() {
+  if(!config.nogoParam) {return};
 
   noGoTopLeft.x = Infinity;
   noGoTopLeft.y = Infinity;
   noGoBottomRight.x = -Infinity;
   noGoBottomRight.y = -Infinity;
 
-  var message = document.getElementById('message');
-  var mainMessage = document.getElementById('main-message');
 
   // define no go zone via a few points
   var textBox = [];
   textBox.push({
-    x: (canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 2) * (1 - Math.random() * 2 * RANDOMBACKGROUND),
-    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (1 - Math.random() * RANDOMBACKGROUND),
+    x: config.nogoParam.x * pixelRatio,
+    y: config.nogoParam.y * pixelRatio,
     x1:0, y1:0, x2:0, y2:0});
 
   textBox.push({
-    x: (canvasRealWidth / 2 ) * (1 - Math.random() * RANDOMBACKGROUND),
-    y: (canvasRealHeight - message.offsetHeight * pixelRatio),
+    x: (config.nogoParam.x + config.nogoParam.width) * pixelRatio,
+    y: config.nogoParam.y * pixelRatio,
     x1:0, y1:0, x2:0, y2:0});
 
   textBox.push({
-    x: (canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 2) * (1 + Math.random() * 2 * RANDOMBACKGROUND),
-    y: (canvasRealHeight - message.offsetHeight * pixelRatio) * (1 - Math.random() * RANDOMBACKGROUND),
+    x: (config.nogoParam.x + config.nogoParam.width) * pixelRatio,
+    y: (config.nogoParam.y + config.nogoParam.height) * pixelRatio,
     x1:0, y1:0, x2:0, y2:0});
 
   textBox.push({
-    x: randomIntFromInterval(canvasRealWidth / 2 + mainMessage.offsetWidth * pixelRatio / 4, 3 * canvasRealWidth / 4),
-    y: canvasRealHeight,
+    x: config.nogoParam.x * pixelRatio,
+    y: (config.nogoParam.y + config.nogoParam.height) * pixelRatio,
     x1:0, y1:0, x2:0, y2:0});
 
-  textBox.push({
-    x: randomIntFromInterval(canvasRealWidth / 4, canvasRealWidth / 2 - mainMessage.offsetWidth * pixelRatio / 4),
-    y: canvasRealHeight,
-    x1:0, y1:0, x2:0, y2:0});
   var n = textBox.length;
 
   // compute the Bezier handle
@@ -752,18 +747,22 @@ function randomIntFromInterval(min,max)
  */
 function generateSVG() {
 
-  var svgcontent = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ", canvasRealWidth , " ", canvasRealHeight, "' width='", canvasRealWidth, "' height='", canvasRealHeight, "'>\n"].join('');
-
-  var pathBegin = ["<path fill='none' stroke='black' stroke-width='", config.line_width * pixelRatio, "' d='"].join('');
+  var getPathBegin = function(p) {
+    p = p || 0;
+    var c = Math.floor(p  /  colorSize);
+    return ["<path fill='none' stroke='", colors[c], "' stroke-width='", config.line_width * pixelRatio, "' d='"].join('');
+  }
   var pathEnd = "' />\n";
 
+  var svgcontent = ["<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ", canvasRealWidth , " ", canvasRealHeight, "' width='", canvasRealWidth, "' height='", canvasRealHeight, "' style='background-color: ", config.background_color,";'>\n"].join('');
+
   if(config.one_path) {
-    svgcontent += pathBegin;
+    svgcontent += getPathBegin();
   }
 
   for(var s = 0; s < svgPathArray.length - 1; s++) {
     if(!config.one_path) {
-      svgcontent += pathBegin;
+      svgcontent += getPathBegin(s);
     }
     svgcontent += ["M", svgPathArray[s].substring(1)].join('');
     if(!config.one_path) {
