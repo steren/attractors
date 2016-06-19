@@ -276,8 +276,8 @@ function field(x, y) {
   // If we are near a special attractor, add its contribution to the field
   if(isNearSpecialAttractor(x,y)) {
     var closestTextPoint = findClosestPointOnSpecialAttractor(x,y);
-    var textUx = (x - closestTextPoint.originX);
-    var textUy = (y - closestTextPoint.originY);
+    var textUx = (closestTextPoint.specialAttractor.direction || 1) * (x - closestTextPoint.originX);
+    var textUy = (closestTextPoint.specialAttractor.direction || 1) * (y - closestTextPoint.originY);
     var norm = Math.sqrt(textUx*textUx + textUy*textUy);
     textUx = textUx / norm;
     textUy = textUy / norm;
@@ -520,7 +520,7 @@ function initTextSpecialAttractors(text, textPositionPercent, textWidthRatio, cl
 }
 
 /** Creates a circular no go zone */
-function createNoGoCircleSpecialAttractors(x, y, radius, impactDistance, type) {
+function createNoGoCircleSpecialAttractors(x, y, radius, impactDistance, type, direction) {
   var circleSubDiv = radius * SUBDIVISE_NOGO / 20;
   for( var i = 0; i < circleSubDiv; i++ ) {
     var specialAttractor = {};
@@ -530,6 +530,7 @@ function createNoGoCircleSpecialAttractors(x, y, radius, impactDistance, type) {
     specialAttractor.y2 = (y + radius * Math.sin(2*Math.PI / circleSubDiv * (i+1))) * pixelRatio;
     specialAttractor.impactDistance = impactDistance * pixelRatio;
     specialAttractor.type = type;
+    specialAttractor.direction = direction;
     specialAttractors.push(specialAttractor);
     if(DEBUG_FLAG) {
       drawHelperCircle(specialAttractor.x1, specialAttractor.y1, 1);
@@ -557,7 +558,7 @@ function initNoGoCirclesSpecialAttractors() {
   for( circle of config.nogoCircles ) {
     var impactDistance = circle.impactDistance || DEFAULT_IMPACT_DISTANCE;
 
-    createNoGoCircleSpecialAttractors(circle.x, circle.y, circle.radius, impactDistance, circle.type);
+    createNoGoCircleSpecialAttractors(circle.x, circle.y, circle.radius, impactDistance, circle.type, circle.direction);
   }
 }
 
