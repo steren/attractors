@@ -16,12 +16,12 @@ var NEW_SEED_CREATION_PROBABILITY = 0;
 // Note: We prefer using a constant distance per frame rather than defining a speed.
 // The speed would result in bad results on low framerate.
 var STEP_DISTANCE = 1;
-var TEXT_ATTRACTOR_RADIUS = 1;
 /** under this width, do not subdivise the quadratic and cubic bezier curves in the text's path */
 var TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
 var PROBABILITY_POINT_APPEARS_NEAR_TEXT = 0.2;
 var RANDOMBACKGROUND = 0.05;
 var GAUSSIAN_PARAM_TEXT = 1/200;
+var DEFAULT_IMPACT_DISTANCE = 1/200;
 var ATTRACTOR_RADIUS_MIN = 1/50;
 var ATTRACTOR_RADIUS_MAX = 16 * ATTRACTOR_RADIUS_MIN;
 var SUBDIVISE_NOGO = 16; // decrease to subdivise more
@@ -121,7 +121,12 @@ function initialize(config) {
 
   hasNogoZone = config.nogo_zone;
   if(hasNogoZone) {
+    config.noGoImpactDistance = config.noGoImpactDistance || DEFAULT_IMPACT_DISTANCE;
     noGoBBoxes = [];
+  }
+
+  if(!config.textGaussianImpactDistance) {
+    config.textGaussianImpactDistance = DEFAULT_IMPACT_DISTANCE;
   }
 
   pixelRatio = config.pixelratio || window.devicePixelRatio || 1;
@@ -268,9 +273,9 @@ function field(x, y) {
   ux = ux / norm;
   uy = uy / norm;
 
-  // If we are near the text, add the text contribution to the field
+  // If we are near a special attractor, add its contribution to the field
   if(isNearSpecialAttractor(x,y)) {
-    var closestTextPoint = findClosestTextPoint(x,y);
+    var closestTextPoint = findClosestPointOnSpecialAttractor(x,y);
     var textUx = (x - closestTextPoint.originX);
     var textUy = (y - closestTextPoint.originY);
     var norm = Math.sqrt(textUx*textUx + textUy*textUy);
@@ -278,7 +283,16 @@ function field(x, y) {
     textUy = textUy / norm;
 
     // Combine fields
-    textWeight = Math.exp( -1 * closestTextPoint.distance * closestTextPoint.distance /  (GAUSSIAN_PARAM_TEXT * D * D) );
+    if(closestTextPoint.specialAttractor.type == 'cos') {
+      if(closestTextPoint.distance < closestTextPoint.specialAttractor.impactDistance) {
+        textWeight = 0.5 * (1 + Math.cos(Math.PI * closestTextPoint.distance / (closestTextPoint.specialAttractor.impactDistance)));
+      } else {
+        textWeight = 0;
+      }
+
+    } else {
+      textWeight = Math.exp( -1 * closestTextPoint.distance * closestTextPoint.distance /  (closestTextPoint.specialAttractor.impactDistance * D * D) );
+    }
     ux = (1-textWeight)*ux + textWeight * textUx;
     uy = (1-textWeight)*uy + textWeight * textUy;
 
@@ -444,7 +458,7 @@ function initTextSpecialAttractors(text, textPositionPercent, textWidthRatio, cl
           specialAttractor.y1 = textY + command1.y;
           specialAttractor.x2 = textX + command2.x;
           specialAttractor.y2 = textY + command2.y;
-          specialAttractor.radius = TEXT_ATTRACTOR_RADIUS;
+          specialAttractor.impactDistance = config.textGaussianImpactDistance * pixelRatio;
           specialAttractors.push(specialAttractor);
 
           // if a real L (line)
@@ -464,14 +478,14 @@ function initTextSpecialAttractors(text, textPositionPercent, textWidthRatio, cl
           var y = bezier([t], [command1.y, command2.y1, command2.y]);
           specialAttractor.x2 = textX + x[0];
           specialAttractor.y2 = textY + y[0];
-          specialAttractor.radius = TEXT_ATTRACTOR_RADIUS;
+          specialAttractor.impactDistance = config.textGaussianImpactDistance * pixelRatio;
           specialAttractors.push(specialAttractor);
           var specialAttractor2 = {};
           specialAttractor2.x1 = specialAttractor.x2;
           specialAttractor2.y1 = specialAttractor.y2;
           specialAttractor2.x2 = textX + command2.x;
           specialAttractor2.y2 = textY + command2.y;
-          specialAttractor2.radius = TEXT_ATTRACTOR_RADIUS;
+          specialAttractor.impactDistance = config.textGaussianImpactDistance * pixelRatio;
           specialAttractors.push(specialAttractor2);
           break;
         case "C":
@@ -482,21 +496,21 @@ function initTextSpecialAttractors(text, textPositionPercent, textWidthRatio, cl
           specialAttractor.y1 = textY + command1.y;
           specialAttractor.x2 = textX + x[0];
           specialAttractor.y2 = textY + y[0];
-          specialAttractor.radius = TEXT_ATTRACTOR_RADIUS;
+          specialAttractor.impactDistance = config.textGaussianImpactDistance * pixelRatio;
           specialAttractors.push(specialAttractor);
           var specialAttractor2 = {};
           specialAttractor2.x1 = specialAttractor.x2;
           specialAttractor2.y1 = specialAttractor.y2;
           specialAttractor2.x2 = textX + x[1];
           specialAttractor2.y2 = textY + y[1];
-          specialAttractor2.radius = TEXT_ATTRACTOR_RADIUS;
+          specialAttractor.impactDistance = config.textGaussianImpactDistance * pixelRatio;
           specialAttractors.push(specialAttractor2);
           var specialAttractor3 = {};
           specialAttractor3.x1 = specialAttractor2.x2;
           specialAttractor3.y1 = specialAttractor2.y2;
           specialAttractor3.x2 = textX + command2.x;
           specialAttractor3.y2 = textY + command2.y;
-          specialAttractor3.radius = TEXT_ATTRACTOR_RADIUS;
+          specialAttractor.impactDistance = config.textGaussianImpactDistance * pixelRatio;
           specialAttractors.push(specialAttractor3);
           break;
         default: // "M", "Z"
@@ -506,7 +520,7 @@ function initTextSpecialAttractors(text, textPositionPercent, textWidthRatio, cl
 }
 
 /** Creates a circular no go zone */
-function createNoGoCircleSpecialAttractors(x, y, radius) {
+function createNoGoCircleSpecialAttractors(x, y, radius, impactDistance, type) {
   var circleSubDiv = radius * SUBDIVISE_NOGO / 20;
   for( var i = 0; i < circleSubDiv; i++ ) {
     var specialAttractor = {};
@@ -514,7 +528,8 @@ function createNoGoCircleSpecialAttractors(x, y, radius) {
     specialAttractor.y1 = (y + radius * Math.sin(2*Math.PI / circleSubDiv * i)) * pixelRatio;
     specialAttractor.x2 = (x + radius * Math.cos(2*Math.PI / circleSubDiv * (i+1))) * pixelRatio;
     specialAttractor.y2 = (y + radius * Math.sin(2*Math.PI / circleSubDiv * (i+1))) * pixelRatio;
-    specialAttractor.radius = 2 * TEXT_ATTRACTOR_RADIUS;
+    specialAttractor.impactDistance = impactDistance * pixelRatio;
+    specialAttractor.type = type;
     specialAttractors.push(specialAttractor);
     if(DEBUG_FLAG) {
       drawHelperCircle(specialAttractor.x1, specialAttractor.y1, 1);
@@ -540,7 +555,9 @@ function initNoGoCirclesSpecialAttractors() {
   if(!config.nogoCircles) {return};
 
   for( circle of config.nogoCircles ) {
-    createNoGoCircleSpecialAttractors(circle.x, circle.y, circle.radius);
+    var impactDistance = circle.impactDistance || DEFAULT_IMPACT_DISTANCE;
+
+    createNoGoCircleSpecialAttractors(circle.x, circle.y, circle.radius, impactDistance, circle.type);
   }
 }
 
@@ -613,7 +630,8 @@ function initNoGoZoneSpecialAttractors() {
       specialAttractor.y1 = By[j];
       specialAttractor.x2 = Bx[j+1];
       specialAttractor.y2 = By[j+1];
-      specialAttractor.radius = 2*TEXT_ATTRACTOR_RADIUS;
+      specialAttractor.impactDistance = config.noGoImpactDistance * pixelRatio;
+      specialAttractor.type = config.nogoZoneType;
       specialAttractors.push(specialAttractor);
 
       if (specialAttractor.x1 > noGoBottomRight.x) {noGoBottomRight.x = specialAttractor.x1};
@@ -651,31 +669,28 @@ function drawHelperCircle(centerX, centerY, radius, fillStyle) {
   ctx.stroke();
 }
 
-
-function findClosestTextPoint(x,y) {
+/**
+ * Finds the closest point to any special attractor segment
+ */
+function findClosestPointOnSpecialAttractor(x,y) {
   var nSpecialAttractor = specialAttractors.length;
-  var deltaMin = 0;
-  var dMin = 0;
+  var currentMinDistance = 0;
+  var currentSpecialAttractor;
   var ox = 0;
   var oy = 0;
   for(var a=0; a<nSpecialAttractor; a++) {
     var specialAttractor = specialAttractors[a];
     var closestSegmentPoint = distanceToSegment(specialAttractor.x1, specialAttractor.y1, specialAttractor.x2, specialAttractor.y2, x, y);
-    if(a == 0) {
-      deltaMin = closestSegmentPoint.distance - specialAttractor.radius;
+    if(a == 0 || (closestSegmentPoint.distance) < currentMinDistance) {
+      currentMinDistance = closestSegmentPoint.distance;
+      currentSpecialAttractor = specialAttractor;
       ox = closestSegmentPoint.originX;
       oy = closestSegmentPoint.originY;
     }
-    else {
-      if((closestSegmentPoint.distance - specialAttractor.radius) < deltaMin) {
-        deltaMin = closestSegmentPoint.distance - specialAttractor.radius;
-        ox = closestSegmentPoint.originX;
-        oy = closestSegmentPoint.originY;
-      }
-    }
   }
   return {
-    distance: deltaMin,
+    distance: currentMinDistance,
+    specialAttractor: currentSpecialAttractor,
     originX: ox,
     originY: oy
   }
