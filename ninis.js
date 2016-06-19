@@ -20,8 +20,7 @@ var STEP_DISTANCE = 1;
 var TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
 var PROBABILITY_POINT_APPEARS_NEAR_TEXT = 0.2;
 var RANDOMBACKGROUND = 0.05;
-var GAUSSIAN_PARAM_TEXT = 1/200;
-var DEFAULT_IMPACT_DISTANCE = 1/200;
+var DEFAULT_IMPACT_DISTANCE = 1/400;
 var ATTRACTOR_RADIUS_MIN = 1/50;
 var ATTRACTOR_RADIUS_MAX = 16 * ATTRACTOR_RADIUS_MIN;
 var SUBDIVISE_NOGO = 16; // decrease to subdivise more
@@ -43,10 +42,20 @@ var canvasRealWidth, canvasRealHeight;
 /** Array containing the info if the shadow of a given particule should be drawn */
 var drawShadowAtPoint;
 
-var attractors;
 /** 
- * Special attractors are used for text and NoGo zones 
- * This is an array of segments
+ * Array of attractors.
+ * An attractor has:
+ *   - x
+ *   - y
+ *   - weight: between -1 and 1
+ *   - radius: impact distance of this attractor
+ */
+var attractors;
+
+/** 
+ * Array of special attractors.
+ * Special attractors are used for text and NoGo zones. 
+ * A special attractor is a segment.
  */
 var specialAttractors;
 
