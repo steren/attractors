@@ -44,11 +44,13 @@ var canvasRealWidth, canvasRealHeight;
 var drawShadowAtPoint;
 
 var attractors;
-/** Special attractors are used for text and NoGo zones */
+/** 
+ * Special attractors are used for text and NoGo zones 
+ * This is an array of segments
+ */
 var specialAttractors;
 
 var hasNogoZone;
-var noGoZone;
 
 var loadedFont;
 
@@ -60,11 +62,13 @@ var D;
 
 /** bounding box of the main text */
 var textTopLeft, textBottomRight;
-/** bounding box of the nogo Zone */
+
+/** Bounding boxes of the no go zones */
+var noGoBBoxes;
 var noGoTopLeft, noGoBottomRight;
 
-/** Array of bounding boxes **/
-var boundingBoxes;
+/** Array of bounding boxes aroung the special attractors **/
+var specialAttractorsBoundingBoxes;
 
 var typedText = '';
 
@@ -92,7 +96,7 @@ function initialize(config) {
   colors.push(config.color1);
   colors.push(config.color2);
 
-  boundingBoxes = [];
+  specialAttractorsBoundingBoxes = [];
 
   // if text string is empty, do not consider text attractors at all
   if(config.text) {
@@ -104,9 +108,9 @@ function initialize(config) {
     }
     textTopLeft = {};
     textBottomRight = {};
-    boundingBoxes.push({
-      topleft: textTopLeft,
-      bottomright: textBottomRight
+    specialAttractorsBoundingBoxes.push({
+      topLeft: textTopLeft,
+      bottomRight: textBottomRight
     });
   }
 
@@ -117,12 +121,7 @@ function initialize(config) {
 
   hasNogoZone = config.nogo_zone;
   if(hasNogoZone) {
-    noGoTopLeft = {};
-    noGoBottomRight = {};
-    boundingBoxes.push({
-      topleft: noGoTopLeft,
-      bottomright: noGoBottomRight
-    });
+    noGoBBoxes = [];
   }
 
   pixelRatio = config.pixelratio || window.devicePixelRatio || 1;
@@ -141,11 +140,11 @@ function initialize(config) {
   initAttractors(config.nb_attractors, ATTRACTOR_RADIUS_MIN, ATTRACTOR_RADIUS_MAX);
   specialAttractors = [];
   if(config.text) {
-    initSpecialAttractors(text, {x: config.text_position_x, y: config.text_position_y}, config.text_width_ratio, cleanPath, PROBABILITY_POINT_APPEARS_NEAR_TEXT);
+    initTextSpecialAttractors(text, {x: config.text_position_x, y: config.text_position_y}, config.text_width_ratio, cleanPath, PROBABILITY_POINT_APPEARS_NEAR_TEXT);
   }
-  noGoZone = [];
   if(hasNogoZone) {
     initNoGoZoneSpecialAttractors();
+    initNoGoCirclesSpecialAttractors();
   }
   initPoints(config.particule_density);
   initDrawShadow();
@@ -270,7 +269,7 @@ function field(x, y) {
   uy = uy / norm;
 
   // If we are near the text, add the text contribution to the field
-  if(isNearText(x,y)) {
+  if(isNearSpecialAttractor(x,y)) {
     var closestTextPoint = findClosestTextPoint(x,y);
     var textUx = (x - closestTextPoint.originX);
     var textUy = (y - closestTextPoint.originY);
@@ -288,14 +287,14 @@ function field(x, y) {
   return [ux, uy];
 }
 
-function isNearText(x,y) {
+function isNearSpecialAttractor(x,y) {
   var near = D/8;
 
-  for(var b = 0; b < boundingBoxes.length; b++) {
-    if( x - (boundingBoxes[b].topleft.x - near) > 0
-      && x - (boundingBoxes[b].bottomright.x + near) < 0
-      && y - (boundingBoxes[b].topleft.y - near) > 0
-      && y - (boundingBoxes[b].bottomright.y + near) < 0) {
+  for(var b = 0; b < specialAttractorsBoundingBoxes.length; b++) {
+    if( x - (specialAttractorsBoundingBoxes[b].topLeft.x - near) > 0
+      && x - (specialAttractorsBoundingBoxes[b].bottomRight.x + near) < 0
+      && y - (specialAttractorsBoundingBoxes[b].topLeft.y - near) > 0
+      && y - (specialAttractorsBoundingBoxes[b].bottomRight.y + near) < 0) {
       return true;
     }
   }
@@ -361,7 +360,7 @@ function initAttractors(nbAtractors, min, max) {
   }
 }
 
-function initSpecialAttractors(text, textPositionPercent, textWidthRatio, cleanPath, probabilityPointAppearsNearText) {
+function initTextSpecialAttractors(text, textPositionPercent, textWidthRatio, cleanPath, probabilityPointAppearsNearText) {
 
   var textPathTopLeft = {x: Infinity, y: Infinity};
   var textPathBottomRight = {x: -Infinity, y: -Infinity};
@@ -388,7 +387,7 @@ function initSpecialAttractors(text, textPositionPercent, textWidthRatio, cleanP
   textBottomRight.y = textTopLeft.y + textHeight;
 
   if(DEBUG_FLAG) {
-    loadedFont.drawPoints(ctx, text, textX, textY, fontSize * pixelRatio);
+    loadedFont.drawPoints(ctx, text, textX, textY, fontSize);
   }
   var subdiviseBezier = false;
   if(textWidth > TEXT_MIN_WIDTH_TO_SUBDIVISE) {
@@ -502,20 +501,55 @@ function initSpecialAttractors(text, textPositionPercent, textWidthRatio, cleanP
           break;
         default: // "M", "Z"
       }
-
-      //drawHelperCircle(attractor.x, attractor.y, attractor.radius);
     }
   }
 }
 
+/** Creates a circular no go zone */
+function createNoGoCircleSpecialAttractors(x, y, radius) {
+  var circleSubDiv = radius * SUBDIVISE_NOGO / 20;
+  for( var i = 0; i < circleSubDiv; i++ ) {
+    var specialAttractor = {};
+    specialAttractor.x1 = (x + radius * Math.cos(2*Math.PI / circleSubDiv * i)) * pixelRatio;
+    specialAttractor.y1 = (y + radius * Math.sin(2*Math.PI / circleSubDiv * i)) * pixelRatio;
+    specialAttractor.x2 = (x + radius * Math.cos(2*Math.PI / circleSubDiv * (i+1))) * pixelRatio;
+    specialAttractor.y2 = (y + radius * Math.sin(2*Math.PI / circleSubDiv * (i+1))) * pixelRatio;
+    specialAttractor.radius = 2 * TEXT_ATTRACTOR_RADIUS;
+    specialAttractors.push(specialAttractor);
+    if(DEBUG_FLAG) {
+      drawHelperCircle(specialAttractor.x1, specialAttractor.y1, 1);
+    }
+  }
 
-function initNoGoZoneCircles() {
-  
+  var bbox = {
+    topLeft: {
+      x: (x - radius) * pixelRatio,
+      y: (y - radius) * pixelRatio,
+    },
+    bottomRight: {
+      x: (x + radius) * pixelRatio,
+      y: (y + radius) * pixelRatio,
+    },
+  };
+
+  specialAttractorsBoundingBoxes.push(bbox);
+  noGoBBoxes.push(bbox);
 }
 
+function initNoGoCirclesSpecialAttractors() {
+  if(!config.nogoCircles) {return};
+
+  for( circle of config.nogoCircles ) {
+    createNoGoCircleSpecialAttractors(circle.x, circle.y, circle.radius);
+  }
+}
+
+/** creates a nogo zone from the given parameters: consig.nogoParam */
 function initNoGoZoneSpecialAttractors() {
   if(!config.nogoParam) {return};
 
+  var noGoTopLeft = {};
+  var noGoBottomRight = {};
   noGoTopLeft.x = Infinity;
   noGoTopLeft.y = Infinity;
   noGoBottomRight.x = -Infinity;
@@ -523,34 +557,34 @@ function initNoGoZoneSpecialAttractors() {
 
 
   // define no go zone via a few points
-  var textBox = [];
-  textBox.push({
+  var noGoZoneBox = [];
+  noGoZoneBox.push({
     x: config.nogoParam.x * pixelRatio,
     y: config.nogoParam.y * pixelRatio,
     x1:0, y1:0, x2:0, y2:0});
 
-  textBox.push({
+  noGoZoneBox.push({
     x: (config.nogoParam.x + config.nogoParam.width) * pixelRatio,
     y: config.nogoParam.y * pixelRatio,
     x1:0, y1:0, x2:0, y2:0});
 
-  textBox.push({
+  noGoZoneBox.push({
     x: (config.nogoParam.x + config.nogoParam.width) * pixelRatio,
     y: (config.nogoParam.y + config.nogoParam.height) * pixelRatio,
     x1:0, y1:0, x2:0, y2:0});
 
-  textBox.push({
+  noGoZoneBox.push({
     x: config.nogoParam.x * pixelRatio,
     y: (config.nogoParam.y + config.nogoParam.height) * pixelRatio,
     x1:0, y1:0, x2:0, y2:0});
 
-  var n = textBox.length;
+  var n = noGoZoneBox.length;
 
   // compute the Bezier handle
   for(var i=0; i<n; i++) {
-    var P1 = textBox[(i-1+n)%n];
-    var P0 = textBox[i];
-    var P2 = textBox[(i+1)%n];
+    var P1 = noGoZoneBox[(i-1+n)%n];
+    var P0 = noGoZoneBox[i];
+    var P2 = noGoZoneBox[(i+1)%n];
     var L  = Math.sqrt(Math.pow(P2.x - P1.x, 2) + Math.pow(P2.y - P1.y, 2));
     var l1 = Math.sqrt(Math.pow(P0.x - P1.x, 2) + Math.pow(P0.y - P1.y, 2));
     var l2 = Math.sqrt(Math.pow(P2.x - P0.x, 2) + Math.pow(P2.y - P0.y, 2));
@@ -558,13 +592,13 @@ function initNoGoZoneSpecialAttractors() {
     P0.x2 = P0.x + (l2/3) * (P2.x - P1.x) / L;
     P0.y1 = P0.y + (l1/3) * (P1.y - P2.y) / L;
     P0.y2 = P0.y + (l2/3) * (P2.y - P1.y) / L;
-    textBox[i] = P0;
+    noGoZoneBox[i] = P0;
   }
 
   // subdivise Bezier curve to create segments
   for(var i=0; i<n; i++) {
-    var PS = textBox[i];
-    var PE = textBox[(i+1)%n];
+    var PS = noGoZoneBox[i];
+    var PE = noGoZoneBox[(i+1)%n];
     var L = Math.sqrt(Math.pow(PE.x - PS.x, 2) + Math.pow(PE.y - PS.y, 2));
     var T = [];
     var nT = Math.ceil(L/SUBDIVISE_NOGO);
@@ -581,12 +615,20 @@ function initNoGoZoneSpecialAttractors() {
       specialAttractor.y2 = By[j+1];
       specialAttractor.radius = 2*TEXT_ATTRACTOR_RADIUS;
       specialAttractors.push(specialAttractor);
-      noGoZone.push(specialAttractor);
 
       if (specialAttractor.x1 > noGoBottomRight.x) {noGoBottomRight.x = specialAttractor.x1};
       if (specialAttractor.y1 > noGoBottomRight.y) {noGoBottomRight.y = specialAttractor.y1};
       if (specialAttractor.x1 < noGoTopLeft.x) {noGoTopLeft.x = specialAttractor.x1};
       if (specialAttractor.y1 < noGoTopLeft.y) {noGoTopLeft.y = specialAttractor.y1};
+
+      specialAttractorsBoundingBoxes.push({
+        topLeft: noGoTopLeft,
+        bottomRight: noGoBottomRight
+      });
+      noGoBBoxes.push({
+        topLeft: noGoTopLeft,
+        bottomRight: noGoBottomRight
+      });
 
       if(DEBUG_FLAG) {
         drawHelperCircle(specialAttractor.x1, specialAttractor.y1, 1);
@@ -643,11 +685,13 @@ function findClosestTextPoint(x,y) {
 
 function isInNoGoZone(x,y) {
   if(hasNogoZone) {
-    if( x - noGoTopLeft.x > 0
-    && x - noGoBottomRight.x < 0
-    && y - noGoTopLeft.y > 0
-    && y - noGoBottomRight.y < 0) {
-      return true;
+    for( let bb of noGoBBoxes ) {
+      if( x - bb.topLeft.x > 0
+        && x - bb.bottomRight.x < 0
+        && y - bb.topLeft.y > 0
+        && y - bb.bottomRight.y < 0) {
+          return true;
+      }
     }
   }
   else{
