@@ -4,7 +4,7 @@
  * @author steren
  */
 
-var DEBUG_FLAG = false;
+var DEBUG_FLAG = true;
 
 var SIZE_SHADOW = 16;
 var SHADOW_IMAGE = 'shadow-o30-ellipse-'
@@ -485,7 +485,7 @@ function initTextSpecialAttractors(text, textPositionPercent, textWidthRatio, cl
           specialAttractor2.y1 = specialAttractor.y2;
           specialAttractor2.x2 = textX + command2.x;
           specialAttractor2.y2 = textY + command2.y;
-          specialAttractor.impactDistance = config.textGaussianImpactDistance * pixelRatio;
+          specialAttractor2.impactDistance = config.textGaussianImpactDistance * pixelRatio;
           specialAttractors.push(specialAttractor2);
           break;
         case "C":
@@ -503,14 +503,14 @@ function initTextSpecialAttractors(text, textPositionPercent, textWidthRatio, cl
           specialAttractor2.y1 = specialAttractor.y2;
           specialAttractor2.x2 = textX + x[1];
           specialAttractor2.y2 = textY + y[1];
-          specialAttractor.impactDistance = config.textGaussianImpactDistance * pixelRatio;
+          specialAttractor2.impactDistance = config.textGaussianImpactDistance * pixelRatio;
           specialAttractors.push(specialAttractor2);
           var specialAttractor3 = {};
           specialAttractor3.x1 = specialAttractor2.x2;
           specialAttractor3.y1 = specialAttractor2.y2;
           specialAttractor3.x2 = textX + command2.x;
           specialAttractor3.y2 = textY + command2.y;
-          specialAttractor.impactDistance = config.textGaussianImpactDistance * pixelRatio;
+          specialAttractor3.impactDistance = config.textGaussianImpactDistance * pixelRatio;
           specialAttractors.push(specialAttractor3);
           break;
         default: // "M", "Z"
