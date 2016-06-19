@@ -4,7 +4,7 @@
  * @author steren
  */
 
-var DEBUG_FLAG = true;
+var DEBUG_FLAG = false;
 
 var SIZE_SHADOW = 16;
 var SHADOW_IMAGE = 'shadow-o30-ellipse-'
