@@ -44,7 +44,9 @@ var canvasRealWidth, canvasRealHeight;
 var drawShadowAtPoint;
 
 var attractors;
-var textAttractors;
+/** Special attractors are used for text and NoGo zones */
+var specialAttractors;
+
 var hasNogoZone;
 var noGoZone;
 
@@ -96,7 +98,7 @@ function initialize(config) {
   if(config.text) {
     var text = config.text;
     var cleanPath = false;
-    // set cleanPath to true is the text corresponds to the clean textAttractor
+    // set cleanPath to true is the text corresponds to the clean specialAttractor
     if(text == '13   8   2016') {
       cleanPath = true;
     }
@@ -137,13 +139,13 @@ function initialize(config) {
   paintCanvasWithBackground();
 
   initAttractors(config.nb_attractors, ATTRACTOR_RADIUS_MIN, ATTRACTOR_RADIUS_MAX);
-  textAttractors = [];
+  specialAttractors = [];
   if(config.text) {
-    initTextAttractors(text, {x: config.text_position_x, y: config.text_position_y}, config.text_width_ratio, cleanPath, PROBABILITY_POINT_APPEARS_NEAR_TEXT);
+    initSpecialAttractors(text, {x: config.text_position_x, y: config.text_position_y}, config.text_width_ratio, cleanPath, PROBABILITY_POINT_APPEARS_NEAR_TEXT);
   }
   noGoZone = [];
   if(hasNogoZone) {
-    initNoGoZoneTextAttractors();
+    initNoGoZoneSpecialAttractors();
   }
   initPoints(config.particule_density);
   initDrawShadow();
@@ -192,7 +194,7 @@ function render(timestamp) {
     ctx.strokeStyle = colors[c];
     for (var i = c * colorSize; i < (c+1) * colorSize; i++ ) {
       if( Math.random() < NEW_SEED_CREATION_PROBABILITY ) {
-        var newSeed = getPositionOutsideOfTextAttractorGaussian();
+        var newSeed = getPositionOutsideOfSpecialAttractorGaussian();
         pointsX[i] = newSeed[0];
         pointsY[i] = newSeed[1];
       }
@@ -306,9 +308,9 @@ function initPoints(particuleDensity) {
   // but do not put pixelRatio * pixelRatio more particules for performances reasons
   var nbParticules = pixelRatio * particuleDensity * canvasScreenWidth * canvasScreenHeight / 1000000
   for(var i = 0; i < nbParticules; i++) {
-    //var newSeed = getPositionOutsideOfTextAttractorSquare(4/5);
-    //var newSeed = getPositionOutsideOfTextAttractorGaussian();
-    var newSeed = getPositionOutsideOfTextAttractorGaussian(config.init_scale);
+    //var newSeed = getPositionOutsideOfSpecialAttractorSquare(4/5);
+    //var newSeed = getPositionOutsideOfSpecialAttractorGaussian();
+    var newSeed = getPositionOutsideOfSpecialAttractorGaussian(config.init_scale);
     pointsX.push(newSeed[0]);
     pointsY.push(newSeed[1]);
   }
@@ -359,7 +361,7 @@ function initAttractors(nbAtractors, min, max) {
   }
 }
 
-function initTextAttractors(text, textPositionPercent, textWidthRatio, cleanPath, probabilityPointAppearsNearText) {
+function initSpecialAttractors(text, textPositionPercent, textWidthRatio, cleanPath, probabilityPointAppearsNearText) {
 
   var textPathTopLeft = {x: Infinity, y: Infinity};
   var textPathBottomRight = {x: -Infinity, y: -Infinity};
@@ -438,13 +440,13 @@ function initTextAttractors(text, textPositionPercent, textWidthRatio, cleanPath
 
       switch(commandToExecute) {
         case "L":
-          var textAttractor = {};
-          textAttractor.x1 = textX + command1.x;
-          textAttractor.y1 = textY + command1.y;
-          textAttractor.x2 = textX + command2.x;
-          textAttractor.y2 = textY + command2.y;
-          textAttractor.radius = TEXT_ATTRACTOR_RADIUS;
-          textAttractors.push(textAttractor);
+          var specialAttractor = {};
+          specialAttractor.x1 = textX + command1.x;
+          specialAttractor.y1 = textY + command1.y;
+          specialAttractor.x2 = textX + command2.x;
+          specialAttractor.y2 = textY + command2.y;
+          specialAttractor.radius = TEXT_ATTRACTOR_RADIUS;
+          specialAttractors.push(specialAttractor);
 
           // if a real L (line)
           if(command2.type == "L") {
@@ -455,48 +457,48 @@ function initTextAttractors(text, textPositionPercent, textWidthRatio, cleanPath
           }
           break;
         case "Q":
-          var textAttractor = {};
+          var specialAttractor = {};
           var t = 1/2;
-          textAttractor.x1 = textX + command1.x;
-          textAttractor.y1 = textY + command1.y;
+          specialAttractor.x1 = textX + command1.x;
+          specialAttractor.y1 = textY + command1.y;
           var x = bezier([t], [command1.x, command2.x1, command2.x]);
           var y = bezier([t], [command1.y, command2.y1, command2.y]);
-          textAttractor.x2 = textX + x[0];
-          textAttractor.y2 = textY + y[0];
-          textAttractor.radius = TEXT_ATTRACTOR_RADIUS;
-          textAttractors.push(textAttractor);
-          var textAttractor2 = {};
-          textAttractor2.x1 = textAttractor.x2;
-          textAttractor2.y1 = textAttractor.y2;
-          textAttractor2.x2 = textX + command2.x;
-          textAttractor2.y2 = textY + command2.y;
-          textAttractor2.radius = TEXT_ATTRACTOR_RADIUS;
-          textAttractors.push(textAttractor2);
+          specialAttractor.x2 = textX + x[0];
+          specialAttractor.y2 = textY + y[0];
+          specialAttractor.radius = TEXT_ATTRACTOR_RADIUS;
+          specialAttractors.push(specialAttractor);
+          var specialAttractor2 = {};
+          specialAttractor2.x1 = specialAttractor.x2;
+          specialAttractor2.y1 = specialAttractor.y2;
+          specialAttractor2.x2 = textX + command2.x;
+          specialAttractor2.y2 = textY + command2.y;
+          specialAttractor2.radius = TEXT_ATTRACTOR_RADIUS;
+          specialAttractors.push(specialAttractor2);
           break;
         case "C":
-          var textAttractor = {};
+          var specialAttractor = {};
           var x = bezier([1/3, 2/3], [command1.x, command2.x1, command2.x2, command2.x]);
           var y = bezier([1/3, 2/3], [command1.y, command2.y1, command2.y2, command2.y]);
-          textAttractor.x1 = textX + command1.x;
-          textAttractor.y1 = textY + command1.y;
-          textAttractor.x2 = textX + x[0];
-          textAttractor.y2 = textY + y[0];
-          textAttractor.radius = TEXT_ATTRACTOR_RADIUS;
-          textAttractors.push(textAttractor);
-          var textAttractor2 = {};
-          textAttractor2.x1 = textAttractor.x2;
-          textAttractor2.y1 = textAttractor.y2;
-          textAttractor2.x2 = textX + x[1];
-          textAttractor2.y2 = textY + y[1];
-          textAttractor2.radius = TEXT_ATTRACTOR_RADIUS;
-          textAttractors.push(textAttractor2);
-          var textAttractor3 = {};
-          textAttractor3.x1 = textAttractor2.x2;
-          textAttractor3.y1 = textAttractor2.y2;
-          textAttractor3.x2 = textX + command2.x;
-          textAttractor3.y2 = textY + command2.y;
-          textAttractor3.radius = TEXT_ATTRACTOR_RADIUS;
-          textAttractors.push(textAttractor3);
+          specialAttractor.x1 = textX + command1.x;
+          specialAttractor.y1 = textY + command1.y;
+          specialAttractor.x2 = textX + x[0];
+          specialAttractor.y2 = textY + y[0];
+          specialAttractor.radius = TEXT_ATTRACTOR_RADIUS;
+          specialAttractors.push(specialAttractor);
+          var specialAttractor2 = {};
+          specialAttractor2.x1 = specialAttractor.x2;
+          specialAttractor2.y1 = specialAttractor.y2;
+          specialAttractor2.x2 = textX + x[1];
+          specialAttractor2.y2 = textY + y[1];
+          specialAttractor2.radius = TEXT_ATTRACTOR_RADIUS;
+          specialAttractors.push(specialAttractor2);
+          var specialAttractor3 = {};
+          specialAttractor3.x1 = specialAttractor2.x2;
+          specialAttractor3.y1 = specialAttractor2.y2;
+          specialAttractor3.x2 = textX + command2.x;
+          specialAttractor3.y2 = textY + command2.y;
+          specialAttractor3.radius = TEXT_ATTRACTOR_RADIUS;
+          specialAttractors.push(specialAttractor3);
           break;
         default: // "M", "Z"
       }
@@ -507,7 +509,11 @@ function initTextAttractors(text, textPositionPercent, textWidthRatio, cleanPath
 }
 
 
-function initNoGoZoneTextAttractors() {
+function initNoGoZoneCircles() {
+  
+}
+
+function initNoGoZoneSpecialAttractors() {
   if(!config.nogoParam) {return};
 
   noGoTopLeft.x = Infinity;
@@ -568,26 +574,25 @@ function initNoGoZoneTextAttractors() {
     var Bx = bezier(T, [PS.x, PS.x2, PE.x1, PE.x]);
     var By = bezier(T, [PS.y, PS.y2, PE.y1, PE.y]);
     for(var j=0; j<(nT-1); j++) {
-      var textAttractor = {};
-      textAttractor.x1 = Bx[j];
-      textAttractor.y1 = By[j];
-      textAttractor.x2 = Bx[j+1];
-      textAttractor.y2 = By[j+1];
-      textAttractor.radius = 2*TEXT_ATTRACTOR_RADIUS;
-      textAttractors.push(textAttractor);
-      noGoZone.push(textAttractor);
+      var specialAttractor = {};
+      specialAttractor.x1 = Bx[j];
+      specialAttractor.y1 = By[j];
+      specialAttractor.x2 = Bx[j+1];
+      specialAttractor.y2 = By[j+1];
+      specialAttractor.radius = 2*TEXT_ATTRACTOR_RADIUS;
+      specialAttractors.push(specialAttractor);
+      noGoZone.push(specialAttractor);
 
-      if (textAttractor.x1 > noGoBottomRight.x) {noGoBottomRight.x = textAttractor.x1};
-      if (textAttractor.y1 > noGoBottomRight.y) {noGoBottomRight.y = textAttractor.y1};
-      if (textAttractor.x1 < noGoTopLeft.x) {noGoTopLeft.x = textAttractor.x1};
-      if (textAttractor.y1 < noGoTopLeft.y) {noGoTopLeft.y = textAttractor.y1};
+      if (specialAttractor.x1 > noGoBottomRight.x) {noGoBottomRight.x = specialAttractor.x1};
+      if (specialAttractor.y1 > noGoBottomRight.y) {noGoBottomRight.y = specialAttractor.y1};
+      if (specialAttractor.x1 < noGoTopLeft.x) {noGoTopLeft.x = specialAttractor.x1};
+      if (specialAttractor.y1 < noGoTopLeft.y) {noGoTopLeft.y = specialAttractor.y1};
 
       if(DEBUG_FLAG) {
-        drawHelperCircle(textAttractor.x1, textAttractor.y1, 1);
+        drawHelperCircle(specialAttractor.x1, specialAttractor.y1, 1);
       }
     }
   }
-
 
 }
 
@@ -606,22 +611,22 @@ function drawHelperCircle(centerX, centerY, radius, fillStyle) {
 
 
 function findClosestTextPoint(x,y) {
-  var nTextAttractor = textAttractors.length;
+  var nSpecialAttractor = specialAttractors.length;
   var deltaMin = 0;
   var dMin = 0;
   var ox = 0;
   var oy = 0;
-  for(var a=0; a<nTextAttractor; a++) {
-    var textAttractor = textAttractors[a];
-    var closestSegmentPoint = distanceToSegment(textAttractor.x1, textAttractor.y1, textAttractor.x2, textAttractor.y2, x, y);
+  for(var a=0; a<nSpecialAttractor; a++) {
+    var specialAttractor = specialAttractors[a];
+    var closestSegmentPoint = distanceToSegment(specialAttractor.x1, specialAttractor.y1, specialAttractor.x2, specialAttractor.y2, x, y);
     if(a == 0) {
-      deltaMin = closestSegmentPoint.distance - textAttractor.radius;
+      deltaMin = closestSegmentPoint.distance - specialAttractor.radius;
       ox = closestSegmentPoint.originX;
       oy = closestSegmentPoint.originY;
     }
     else {
-      if((closestSegmentPoint.distance - textAttractor.radius) < deltaMin) {
-        deltaMin = closestSegmentPoint.distance - textAttractor.radius;
+      if((closestSegmentPoint.distance - specialAttractor.radius) < deltaMin) {
+        deltaMin = closestSegmentPoint.distance - specialAttractor.radius;
         ox = closestSegmentPoint.originX;
         oy = closestSegmentPoint.originY;
       }
@@ -653,21 +658,21 @@ function isInNoGoZone(x,y) {
 
 
 
-function getPositionOutsideOfTextAttractorSquare(sizeRatio) {
+function getPositionOutsideOfSpecialAttractorSquare(sizeRatio) {
   if(!sizeRatio) {sizeRatio = 1;}
-  return getPositionOutsideOfTextAttractor(Math.random, sizeRatio);
+  return getPositionOutsideOfSpecialAttractor(Math.random, sizeRatio);
 }
 
-function getPositionOutsideOfTextAttractorGaussian(sizeRatio) {
+function getPositionOutsideOfSpecialAttractorGaussian(sizeRatio) {
   if(!sizeRatio) {sizeRatio = 1;}
-  return getPositionOutsideOfTextAttractor(normalRand, sizeRatio);
+  return getPositionOutsideOfSpecialAttractor(normalRand, sizeRatio);
 }
 
 /**
  * @param f: function to use to return point between 0 and 1
  * @param sizeRatio: scaling factor outside out which nothing will be used
  */
-function getPositionOutsideOfTextAttractor(f, sizeRatio) {
+function getPositionOutsideOfSpecialAttractor(f, sizeRatio) {
   if(!sizeRatio) {sizeRatio = 1;}
   while(true) {
     var x = f() * canvasRealWidth * sizeRatio + canvasRealWidth * ( 1 - sizeRatio) / 2;
