@@ -86,7 +86,7 @@
 
 
 	<script type="text/javascript">
-	// Refresh on click and fetch keys
+	// Refresh on click, on resize and fetch keyboard keys
 
 		function refreshGUI() {
 		  console.log(textInput);
@@ -126,6 +126,8 @@
 		document.body.addEventListener('keydown', onKeyDown);
 
 		document.getElementById("paint-canvas").addEventListener('click', init, true);
+
+		window.addEventListener( 'resize', init, false );
 	</script>
 
 

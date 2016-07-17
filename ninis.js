@@ -94,8 +94,6 @@ if(config.text) {
   animate();
 }
 
-window.addEventListener( 'resize', init, false );
-
 function init() {
   initialize(config);
 }
