@@ -1,0 +1,32 @@
+{
+  "name": "attractors",
+  "version": "1.0.0",
+  "description": "Generating animated attractors for <canvas>",
+  "main": "ninis.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "serve"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/steren/attractors.git"
+  },
+  "keywords": [
+    "canvas",
+    "attractors",
+    "animated"
+  ],
+  "author": "Steren Giannini <steren.giannini@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/steren/attractors/issues"
+  },
+  "homepage": "https://github.com/steren/attractors#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "serve": "^6.4.8"
+  }
+}
