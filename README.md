@@ -1,5 +1,37 @@
 # Attractors
 
+## Using as a dependency
+
+Install with `npm install attractors` or just clone this repository.
+
+Add a canvas to your page: `<canvas id="paint-canvas"></canvas>`
+
+Configure the library with a global `config` object (sorry)
+```
+<script type="text/javascript">
+var config = {
+  id: 'paint-canvas',
+  init_scale: 1,
+  text: 'A T T R A C T O R S',
+  text_position_x: 50,
+  text_position_y: 33,
+  text_width_ratio: 12,
+  background_color: '#57A3BD',
+  nb_attractors: 25,
+  particule_density: 900,
+  line_width: 0.35,
+  nogo_zone: false,
+  color1: '#DBCEC1',
+  color2: '#F7F6F5',
+  pixelratio: window.devicePixelRatio,
+  root: 'node_modules/attractors/'
+}
+</script>	
+```
+
+If you use the `text` attribute, load the `opentype` library: `<script src="node_modules/attractors/lib/opentype.min.js"></script>`
+
+Load the module: `<script src="node_modules/attractors/ninis.js"></script>`
 
 ## Configuration
 
