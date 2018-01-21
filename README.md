@@ -1,5 +1,9 @@
 # Attractors
 
+<img width="460" alt="large" src="https://user-images.githubusercontent.com/360895/35189698-a8d70dee-fe05-11e7-9886-3ba681b59be8.png">
+
+See this [playlist of examples on Youtube](https://www.youtube.com/watch?v=8Xckh9zVzU4&list=PL7Bq7_PxIAiCJ3yCgzGKgErZpBk7ipZ0I).
+
 ## Using as a dependency
 
 Install with `npm install attractors` or just clone this repository.
