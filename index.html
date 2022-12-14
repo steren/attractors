@@ -60,9 +60,10 @@
 	<script src="/lib/opentype.min.js"></script>
 	-->
 
-	<script type="text/javascript">
+	<script type="module">
+	import { start, generateSVG } from './ninis.js';
+	
 	// Default config and load from URL
-
 	  var config = {
 	  		  id: 'paint-canvas',
 	  		  init_scale: 1,
@@ -89,13 +90,11 @@
 				config = JSON.parse(decodeURIComponent(window.location.hash.slice(1)));
 			} catch(e) {}
 		}
-	</script>	
-	<script src="ninis.js"></script>
+
+		start(config);
 
 
-	<script type="text/javascript">
-	// Refresh on click, on resize and fetch keyboard keys
-
+		// Refresh on click, on resize and fetch keyboard keys
 		function refreshGUI() {
 		  console.log(textInput);
   		  textInput.updateDisplay();
@@ -155,7 +154,7 @@
 	function reload() {
 		config.nogoParam = getNoGoElParam();
 		window.location.hash = encodeURIComponent(JSON.stringify(config));
-		init();
+		start(config);
 	}
 		
 
@@ -195,6 +194,8 @@
 	  	gui.domElement.style.visibility = 'visible';
 	    dat.GUI.toggleHide();
 	  });
-	</script>
+	</script>	
+
+
 </body>
 </html>

@@ -4,43 +4,45 @@
  * @author steren
  */
 
-var DEBUG_FLAG = false;
+let config;
 
-var SIZE_SHADOW = 16;
-var SHADOW_IMAGE = 'shadow-o30-ellipse-'
-var SHADOW_OPACITY = 0.03;
-var DELTA_SHADOW_X = 1;
-var DELTA_SHADOW_Y = 1;
-var NEW_SEED_CREATION_PROBABILITY = 0;
+const DEBUG_FLAG = false;
+
+const SIZE_SHADOW = 16;
+const SHADOW_IMAGE = 'shadow-o30-ellipse-'
+const SHADOW_OPACITY = 0.03;
+const DELTA_SHADOW_X = 1;
+const DELTA_SHADOW_Y = 1;
+const NEW_SEED_CREATION_PROBABILITY = 0;
 /** Distance to move the points at each frame. */
 // Note: We prefer using a constant distance per frame rather than defining a speed.
 // The speed would result in bad results on low framerate.
-var STEP_DISTANCE = 1;
+const STEP_DISTANCE = 1;
 /** under this width, do not subdivise the quadratic and cubic bezier curves in the text's path */
-var TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
-var PROBABILITY_POINT_APPEARS_NEAR_TEXT = 0.2;
-var RANDOMBACKGROUND = 0.05;
-var DEFAULT_IMPACT_DISTANCE = 1/400;
-var ATTRACTOR_RADIUS_MIN = 1/50;
-var ATTRACTOR_RADIUS_MAX = 16 * ATTRACTOR_RADIUS_MIN;
-var SUBDIVISE_NOGO = 16; // decrease to subdivise more
+const TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
+const PROBABILITY_POINT_APPEARS_NEAR_TEXT = 0.2;
+const RANDOMBACKGROUND = 0.05;
+const DEFAULT_IMPACT_DISTANCE = 1/400;
+const ATTRACTOR_RADIUS_MIN = 1/50;
+const ATTRACTOR_RADIUS_MAX = 16 * ATTRACTOR_RADIUS_MIN;
+const SUBDIVISE_NOGO = 16; // decrease to subdivise more
 
-var FONT = 'CamBam/1CamBam_Stick_2.ttf';
+const FONT = 'CamBam/1CamBam_Stick_2.ttf';
 //var FONT = 'Codystar/Codystar-Regular.ttf';
 //var FONT = 'Fredoka_One/FredokaOne-Regular.ttf';
 
-var canvas, ctx;
-var shadow;
-var pixelRatio;
-var colorSize;
+let canvas, ctx;
+let shadow;
+let pixelRatio;
+let colorSize;
 
-var colors;
+let colors;
 
-var pointsX, pointsY;
-var canvasScreenWidth, canvasScreenHeight;
-var canvasRealWidth, canvasRealHeight;
+let pointsX, pointsY;
+let canvasScreenWidth, canvasScreenHeight;
+let canvasRealWidth, canvasRealHeight;
 /** Array containing the info if the shadow of a given particule should be drawn */
-var drawShadowAtPoint;
+let drawShadowAtPoint;
 
 /** 
  * Array of attractors.
@@ -50,55 +52,60 @@ var drawShadowAtPoint;
  *   - weight: between -1 and 1
  *   - radius: impact distance of this attractor
  */
-var attractors;
+let attractors;
 
 /** 
  * Array of special attractors.
  * Special attractors are used for text and NoGo zones. 
  * A special attractor is a segment.
  */
-var specialAttractors;
+let specialAttractors;
 
-var hasNogoZone;
+let hasNogoZone;
 
-var loadedFont;
+let loadedFont;
 
 /** Stores strings of SVG paths (when config.svg is true)n*/
-var svgPathArray;
+let svgPathArray;
 
 /** characteristic distance of the image */
-var D;
+let D;
 
 /** bounding box of the main text */
-var textTopLeft, textBottomRight;
+let textTopLeft;
+let textBottomRight;
 
 /** Bounding boxes of the no go zones */
-var noGoBBoxes;
-var noGoTopLeft, noGoBottomRight;
+let noGoBBoxes;
 
 /** Array of bounding boxes aroung the special attractors **/
-var specialAttractorsBoundingBoxes;
+let specialAttractorsBoundingBoxes;
 
-var typedText = '';
 
-if(config.text) {
-  var folder = config.root || '';
-  opentype.load(folder + 'fonts/' + FONT, function(err, font) {
-    console.log(font);
-    loadedFont = font;
-    init();
+
+function start(cfg) {
+  if(!cfg) {
+    console.error('No config object provided');
+    return;
+  };
+
+  config = cfg;
+
+  if(config.text) {
+    var folder = config.root || '';
+    opentype.load(folder + 'fonts/' + FONT, function(err, font) {
+      console.log(font);
+      loadedFont = font;
+      initialize();
+      animate();
+    });
+  } else {
+    initialize();
     animate();
-  });
-} else {
-  init();
-  animate();
+  }
 }
 
-function init() {
-  initialize(config);
-}
-
-function initialize(config) {
+function initialize() {
   colors = []
   colors.push(config.color1);
   colors.push(config.color2);
@@ -289,6 +296,7 @@ function field(x, y) {
     textUx = textUx / norm;
     textUy = textUy / norm;
 
+    let textWeight;
     // Combine fields
     if(closestTextPoint.specialAttractor.type == 'cos') {
       if(closestTextPoint.distance < closestTextPoint.specialAttractor.impactDistance) {
@@ -864,3 +872,7 @@ var saveSVG = (function () {
     };
 }());
 
+export {
+  start,
+  generateSVG
+}
