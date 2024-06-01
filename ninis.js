@@ -38,11 +38,14 @@ let colorSize;
 
 let colors;
 
-let pointsX, pointsY;
+const pointsX = [];
+const pointsY = [];
+/** Array containing the info if the shadow of a given particule should be drawn */
+const drawShadowAtPoint = [];
+
 let canvasScreenWidth, canvasScreenHeight;
 let canvasRealWidth, canvasRealHeight;
-/** Array containing the info if the shadow of a given particule should be drawn */
-let drawShadowAtPoint;
+
 
 /** 
  * Array of attractors.
@@ -81,6 +84,8 @@ let noGoBBoxes;
 /** Array of bounding boxes aroung the special attractors **/
 let specialAttractorsBoundingBoxes;
 
+/** If we are currently already animating */
+let animating = false;
 
 
 function start(cfg) {
@@ -97,11 +102,15 @@ function start(cfg) {
       console.log(font);
       loadedFont = font;
       initialize();
-      animate();
+      if(!animating) {
+        animate();
+      }
     });
   } else {
     initialize();
-    animate();
+    if(!animating) {
+      animate();
+    }
   }
 }
 
@@ -127,11 +136,6 @@ function initialize() {
       bottomRight: textBottomRight
     });
   }
-
-  // initialize globals
-  pointsX = [];
-  pointsY = [];
-  drawShadowAtPoint = [];
 
   hasNogoZone = config.nogo_zone;
   if(hasNogoZone) {
@@ -199,6 +203,7 @@ function paintCanvasWithBackground() {
 }
 
 function animate(timestamp) {
+  animating = true;
   requestAnimationFrame( animate );
   render(timestamp);
 }
@@ -332,12 +337,12 @@ function isNearSpecialAttractor(x,y) {
 
 /** @param particuleDensity: number of particule for a square of 1000 * 1000 pixels */
 function initPoints(particuleDensity) {
+  pointsX.length = 0;
+  pointsY.length = 0;
   // for a device with higher pixel ratio, put more particules.
   // but do not put pixelRatio * pixelRatio more particules for performances reasons
   var nbParticules = pixelRatio * particuleDensity * canvasScreenWidth * canvasScreenHeight / 1000000
   for(var i = 0; i < nbParticules; i++) {
-    //var newSeed = getPositionOutsideOfSpecialAttractorSquare(4/5);
-    //var newSeed = getPositionOutsideOfSpecialAttractorGaussian();
     var newSeed = getPositionOutsideOfSpecialAttractorGaussian(config.init_scale);
     pointsX.push(newSeed[0]);
     pointsY.push(newSeed[1]);
@@ -345,6 +350,7 @@ function initPoints(particuleDensity) {
 }
 
 function initDrawShadow() {
+  drawShadowAtPoint.lenght = 0;
   for(var p = 0; p < pointsX.length; p++) {
     drawShadowAtPoint.push(true);
   }
