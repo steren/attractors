@@ -159,8 +159,9 @@
 
 	// dat.GUI controls
 	  var gui = new dat.GUI();
-	  gui.domElement.style.visibility = 'hidden';
-	  dat.GUI.toggleHide();
+	  //gui.domElement.style.visibility = 'hidden';
+		gui.close();
+	  //dat.GUI.toggleHide();
 	  gui.remember(config);
 
 	  gui.addColor(config, 'background_color').onChange(reload);
