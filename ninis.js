@@ -17,7 +17,7 @@ const NEW_SEED_CREATION_PROBABILITY = 0;
 /** Distance to move the points at each frame. */
 // Note: We prefer using a constant distance per frame rather than defining a speed.
 // The speed would result in bad results on low framerate.
-const STEP_DISTANCE = 1;
+const SPEED = 60; // pixels per second
 /** under this width, do not subdivise the quadratic and cubic bezier curves in the text's path */
 const TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
 const PROBABILITY_POINT_APPEARS_NEAR_TEXT = 0.2;
@@ -86,6 +86,7 @@ let specialAttractorsBoundingBoxes;
 
 /** If we are currently already animating */
 let animating = false;
+let lastTimestamp = 0;
 
 
 function start(cfg) {
@@ -204,11 +205,15 @@ function paintCanvasWithBackground() {
 
 function animate(timestamp) {
   animating = true;
+  lastTimestamp = timestamp;
   requestAnimationFrame( animate );
   render(timestamp);
 }
 
 function render(timestamp) {
+  const deltaTime = timestamp - lastTimestamp;
+  lastTimestamp = timestamp;
+
   // cut the number of points per number of color, and paint all of the same color at once:
   // start a path and add each segment to it, and only then, paint it.
   // This increases performances instead of painting each segment after the other.
@@ -224,7 +229,7 @@ function render(timestamp) {
       else {
         var oldX = pointsX[i];
         var oldY = pointsY[i];
-        var newPosition = getNewPosition(oldX, oldY, i);
+        var newPosition = getNewPosition(oldX, oldY, i, deltaTime);
         ctx.moveTo(oldX,oldY);
         ctx.lineTo(newPosition[0], newPosition[1]);
         pointsX[i] = newPosition[0];
@@ -251,7 +256,7 @@ function render(timestamp) {
 
 }
 
-function getNewPosition(x, y, index) {
+function getNewPosition(x, y, index, deltaTime) {
   var fieldXY = field(x,y);
 
   // if distance is small, reduce probability to draw shadow
@@ -260,8 +265,9 @@ function getNewPosition(x, y, index) {
       drawShadowAtPoint[index] = false;
   }
 
-  var ux = -1 * STEP_DISTANCE * pixelRatio * fieldXY[1];
-  var uy =      STEP_DISTANCE * pixelRatio * fieldXY[0];
+  const distance = SPEED * deltaTime / 1000;
+  var ux = -1 * distance * pixelRatio * fieldXY[1];
+  var uy =      distance * pixelRatio * fieldXY[0];
 
   var newX = x + ux;
   var newY = y + uy;
