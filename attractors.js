@@ -47,30 +47,62 @@ const SUBDIVISE_NOGO = 16;
 
 const FONT = 'fonts/CamBam/1CamBam_Stick_2.ttf';
 
+/** Draws a closed outline through the given `[x, y]` points. */
+function polygon(path, points) {
+  path.moveTo(...points[0]);
+  for (const point of points.slice(1)) {
+    path.lineTo(...point);
+  }
+  // Come back to the first point explicitly: a closing "Z" command creates no attractor,
+  // so without this line the last side would attract nothing.
+  path.lineTo(...points[0]);
+  path.close();
+}
+
+/**
+ * Width of a fallback glyph, in font units. Both the triangle and the hexagon are
+ * regular polygons fitting in the cap height, hence `2 / sqrt(3)` as wide as they are tall.
+ */
+function polygonWidth(capHeight) {
+  return (2 / Math.sqrt(3)) * capHeight;
+}
+
 /**
  * Characters that the fonts have no glyph for, drawn by the library instead.
- * Their outline is built from the font's cap height, so that they sit on the baseline
- * and match the size of the letters around them.
+ * `outline(path, capHeight, x)` draws the character starting at `x`, on the baseline and
+ * as tall as a capital letter, so that it matches the letters around it. It returns the
+ * width it drew, in font units.
  */
 const FALLBACK_GLYPHS = [
   {
-    /** ▲ BLACK UP-POINTING TRIANGLE. */
+    /** ▲ BLACK UP-POINTING TRIANGLE: an equilateral triangle standing on the baseline. */
     unicode: 0x25b2,
     name: 'blackuptriangle',
-    /**
-     * Draws an equilateral triangle as tall as a capital letter.
-     * @returns {number} The advance width of the glyph, in font units.
-     */
-    outline(path, capHeight, sideBearing) {
-      const side = (2 / Math.sqrt(3)) * capHeight;
-      path.moveTo(sideBearing + side / 2, capHeight);
-      path.lineTo(sideBearing + side, 0);
-      path.lineTo(sideBearing, 0);
-      // Come back to the apex explicitly: a closing "Z" command creates no attractor,
-      // so without this line the third side would attract nothing.
-      path.lineTo(sideBearing + side / 2, capHeight);
-      path.close();
-      return side + 2 * sideBearing;
+    outline(path, capHeight, x) {
+      const width = polygonWidth(capHeight);
+      polygon(path, [
+        [x + width / 2, capHeight],
+        [x + width, 0],
+        [x, 0],
+      ]);
+      return width;
+    },
+  },
+  {
+    /** ⬣ HORIZONTAL BLACK HEXAGON: a regular hexagon lying on a flat side. */
+    unicode: 0x2b23,
+    name: 'horizontalblackhexagon',
+    outline(path, capHeight, x) {
+      const width = polygonWidth(capHeight);
+      polygon(path, [
+        [x, capHeight / 2],
+        [x + width / 4, capHeight],
+        [x + (3 * width) / 4, capHeight],
+        [x + width, capHeight / 2],
+        [x + (3 * width) / 4, 0],
+        [x + width / 4, 0],
+      ]);
+      return width;
     },
   },
 ];
@@ -190,7 +222,7 @@ function addFallbackGlyphs(font, { Glyph, Path }) {
     }
 
     const path = new Path();
-    const advanceWidth = outline(path, height, sideBearing);
+    const advanceWidth = outline(path, height, sideBearing) + 2 * sideBearing;
     const index = font.glyphs.length;
     font.glyphs.push(index, new Glyph({ name, unicode, index, advanceWidth, path }));
     glyphIndexMap[unicode] = index;

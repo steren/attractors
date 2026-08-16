@@ -93,8 +93,8 @@ framerate, so a given speed looks the same on any display.
 ### Text
 
 `text`: string of text to display, that particles will flow around. The font has no glyph
-for `▲`, so the library draws it itself, as an equilateral triangle as tall as a capital
-letter
+for `▲` and `⬣`, so the library draws them itself, as a triangle and a hexagon as tall as
+a capital letter
 
 `text_position_x`, `text_position_y`: position of the text, in percent of the canvas
 
