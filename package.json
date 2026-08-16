@@ -1,14 +1,21 @@
 {
   "name": "attractors",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Generating animated attractors for <canvas>",
-  "main": "ninis.js",
-  "directories": {
-    "lib": "lib"
+  "type": "module",
+  "main": "attractors.js",
+  "exports": {
+    ".": "./attractors.js"
   },
+  "files": [
+    "attractors.js",
+    "fonts",
+    "shadow-*.png"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "serve"
+    "start": "npx --yes serve .",
+    "test": "node --check attractors.js && node --check main.js",
+    "vendor": "cp node_modules/opentype.js/dist/opentype.min.mjs lib/opentype.mjs && cp node_modules/lil-gui/dist/lil-gui.esm.min.js lib/lil-gui.esm.js && sed -i.bak '/sourceMappingURL/d' lib/opentype.mjs lib/lil-gui.esm.js && rm -f lib/*.bak"
   },
   "repository": {
     "type": "git",
@@ -17,7 +24,8 @@
   "keywords": [
     "canvas",
     "attractors",
-    "animated"
+    "animated",
+    "generative-art"
   ],
   "author": "Steren Giannini <steren.giannini@gmail.com>",
   "license": "Apache-2.0",
@@ -25,5 +33,10 @@
     "url": "https://github.com/steren/attractors/issues"
   },
   "homepage": "https://github.com/steren/attractors#readme",
-  "dependencies": {}
+  "dependencies": {
+    "opentype.js": "^2.0.0"
+  },
+  "devDependencies": {
+    "lil-gui": "^0.21.0"
+  }
 }
