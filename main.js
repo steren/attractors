@@ -92,6 +92,7 @@ gui.addColor(config, 'background_color').name('background');
 gui.add(config, 'nb_attractors', 0, 500).name('attractors');
 gui.add(config, 'particule_density', 0, 3000).name('density');
 gui.add(config, 'init_scale', 0.01, 1.5).name('initial scale');
+gui.add(config, 'speed', 0, 5).name('speed');
 gui.add(config, 'nogo_zone').name('no go zone');
 
 const textFolder = gui.addFolder('Text').close();
