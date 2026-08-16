@@ -12,15 +12,28 @@ const SHADOW_OPACITY = 0.03;
 const SHADOW_OFFSET_X = 1;
 const SHADOW_OFFSET_Y = 1;
 
-/** Probability, per particle and per frame, that a particle is re-seeded elsewhere. */
+/** Probability, per particle and per reference frame, that a particle is re-seeded elsewhere. */
 const NEW_SEED_CREATION_PROBABILITY = 0;
 
+/** Framerate the animation is tuned for. Every "per frame" constant refers to it. */
+const REFERENCE_FRAMERATE = 60;
+
+/** Duration of a frame at the reference framerate, in milliseconds. */
+const REFERENCE_FRAME_DURATION = 1000 / REFERENCE_FRAMERATE;
+
 /**
- * Distance to move the points at each frame.
- * Note: we prefer a constant distance per frame over a speed, as a speed
- * would give bad results on low framerates.
+ * Speed of the particles, in CSS pixels per second. At the reference framerate,
+ * this moves a particle by one pixel per frame.
  */
-const STEP_DISTANCE = 1;
+const SPEED = REFERENCE_FRAMERATE;
+
+/**
+ * Longest frame duration taken into account, in milliseconds.
+ * Longer frames, on a slow device or when coming back to a background tab, are
+ * clamped: moving the particles by the whole elapsed distance at once would draw
+ * long straight segments instead of curves.
+ */
+const MAX_FRAME_DURATION = 3 * REFERENCE_FRAME_DURATION;
 
 /** Under this width, do not subdivise the quadratic and cubic bezier curves of the text's path. */
 const TEXT_MIN_WIDTH_TO_SUBDIVISE = 500;
@@ -206,6 +219,8 @@ export class Attractors {
   #shadow = null;
   #frameId = null;
   #stopped = false;
+  /** Timestamp of the previously rendered frame, in milliseconds. */
+  #lastTimestamp = null;
 
   /** Scratch vectors, reused on every particle to avoid allocating in the render loop. */
   #field = { x: 0, y: 0 };
@@ -235,11 +250,12 @@ export class Attractors {
     this.#initialize();
 
     if (this.#frameId === null) {
-      const loop = () => {
+      this.#lastTimestamp = null;
+      const loop = (timestamp) => {
         this.#frameId = requestAnimationFrame(loop);
-        this.#render();
+        this.#render(timestamp);
       };
-      loop();
+      this.#frameId = requestAnimationFrame(loop);
     }
     return this;
   }
@@ -311,11 +327,29 @@ export class Attractors {
     this.#ctx.fillRect(0, 0, this.#width, this.#height);
   }
 
-  #render() {
+  /**
+   * Paints one frame.
+   * @param {number} timestamp Time of this frame, in milliseconds, as given by
+   *   `requestAnimationFrame`. Distances and probabilities are scaled by the time
+   *   elapsed since the previous frame, so that the animation runs at the same
+   *   speed whatever the framerate of the display.
+   */
+  #render(timestamp) {
     const ctx = this.#ctx;
     const pointsX = this.#pointsX;
     const pointsY = this.#pointsY;
     const total = pointsX.length;
+
+    // Duration of this frame, expressed as a number of reference frames.
+    const elapsed =
+      this.#lastTimestamp === null
+        ? REFERENCE_FRAME_DURATION
+        : Math.min(timestamp - this.#lastTimestamp, MAX_FRAME_DURATION);
+    this.#lastTimestamp = timestamp;
+    const frames = elapsed / REFERENCE_FRAME_DURATION;
+
+    // Distance travelled by a particle during this frame.
+    const step = (SPEED * elapsed * this.#pixelRatio) / 1000;
 
     // Cut the particles into one group per color, and paint each group at once:
     // start a path, add every segment to it, and only then paint it. This performs
@@ -325,7 +359,7 @@ export class Attractors {
       ctx.beginPath();
       ctx.strokeStyle = color;
       for (let i = c * this.#colorSize; i < end; i++) {
-        if (Math.random() < NEW_SEED_CREATION_PROBABILITY) {
+        if (Math.random() < NEW_SEED_CREATION_PROBABILITY * frames) {
           [pointsX[i], pointsY[i]] = this.#getSeedPosition(normalRand);
           continue;
         }
@@ -334,13 +368,14 @@ export class Attractors {
         const field = this.#fieldAt(oldX, oldY);
 
         // The particle moves perpendicular to the field.
-        const step = STEP_DISTANCE * this.#pixelRatio;
         const newX = oldX - step * field.y;
         const newY = oldY + step * field.x;
 
-        // If the field is weak, reduce the probability to draw a shadow.
+        // If the field is weak, reduce the probability to draw a shadow. Shadows are
+        // drawn once per frame, so scale it down on displays faster than the reference
+        // framerate, to keep the same amount of shadows per second.
         this.#drawShadowAtPoint[i] =
-          Math.random() <= field.x * field.x + field.y * field.y;
+          Math.random() <= (field.x * field.x + field.y * field.y) * frames;
 
         ctx.moveTo(oldX, oldY);
         ctx.lineTo(newX, newY);
