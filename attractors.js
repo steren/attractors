@@ -286,7 +286,8 @@ export class Attractors {
 
   /**
    * Array of special attractors, used for text and no go zones.
-   * A special attractor is a segment `{x1, y1, x2, y2, impactDistance, type?, direction?}`.
+   * A special attractor is a segment `{x1, y1, dx, dy, invLength2, impactDistance, type?,
+   * direction?}`, going from `(x1, y1)` to `(x1 + dx, y1 + dy)`.
    */
   #specialAttractors = [];
 
@@ -597,39 +598,37 @@ export class Attractors {
    */
   #findClosestPointOnSpecialAttractor(x, y) {
     const closest = this.#closest;
-    closest.distance = Infinity;
     closest.attractor = null;
+    // Squared distance to the closest point found so far. Comparing squared distances
+    // gives the same winner as comparing distances, for a single square root at the end
+    // instead of one per segment.
+    let closestDistance2 = Infinity;
 
     for (const attractor of this.#specialAttractors) {
-      const { x1, y1, x2, y2 } = attractor;
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      // Position of the projection of (x, y) on the segment, as a fraction of its squared length.
-      const length2 = dx * dx + dy * dy;
-      const projection = (x - x1) * dx + (y - y1) * dy;
+      const { x1, y1, dx, dy } = attractor;
 
-      let originX;
-      let originY;
-      if (projection > length2) {
-        originX = x2;
-        originY = y2;
-      } else if (projection < 0) {
-        originX = x1;
-        originY = y1;
-      } else {
-        originX = x1 + (dx * projection) / length2;
-        originY = y1 + (dy * projection) / length2;
+      // Position of the projection of (x, y) on the segment, clamped to its ends.
+      let t = ((x - x1) * dx + (y - y1) * dy) * attractor.invLength2;
+      if (t > 1) {
+        t = 1;
+      } else if (t < 0) {
+        t = 0;
       }
 
-      const distance = Math.hypot(originX - x, originY - y);
-      if (distance < closest.distance) {
-        closest.distance = distance;
+      const originX = x1 + dx * t;
+      const originY = y1 + dy * t;
+      const errorX = originX - x;
+      const errorY = originY - y;
+      const distance2 = errorX * errorX + errorY * errorY;
+      if (distance2 < closestDistance2) {
+        closestDistance2 = distance2;
         closest.attractor = attractor;
         closest.originX = originX;
         closest.originY = originY;
       }
     }
 
+    closest.distance = Math.sqrt(closestDistance2);
     return closest;
   }
 
@@ -691,7 +690,21 @@ export class Attractors {
   }
 
   #addSpecialAttractor(x1, y1, x2, y2, impactDistance, type, direction) {
-    this.#specialAttractors.push({ x1, y1, x2, y2, impactDistance, type, direction });
+    // `dx`, `dy` and `invLength2` describe the segment as `(x1, y1) + t * (dx, dy)`, with
+    // `t` between 0 and 1. They only depend on the segment, so they are computed once here
+    // rather than for every particle of every frame, in the render loop.
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    this.#specialAttractors.push({
+      x1,
+      y1,
+      dx,
+      dy,
+      invLength2: 1 / (dx * dx + dy * dy),
+      impactDistance,
+      type,
+      direction,
+    });
     if (this.config.debug) {
       this.#drawHelperCircle(x1, y1, 1);
     }
