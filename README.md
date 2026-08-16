@@ -86,6 +86,10 @@ import to a copy of the library:
 `1` means they spread over an area the size of the screen, `2` twice the size of the
 screen, `0.5` half the size of the screen.
 
+`speed`: speed of the animation, defaults to `1`. `2` plays the very same animation
+twice as fast, `0.5` twice as slow, `0` freezes it. The animation is independent of the
+framerate, so a given speed looks the same on any display.
+
 ### Text
 
 `text`: string of text to display, that particles will flow around

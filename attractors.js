@@ -22,8 +22,8 @@ const REFERENCE_FRAMERATE = 60;
 const REFERENCE_FRAME_DURATION = 1000 / REFERENCE_FRAMERATE;
 
 /**
- * Speed of the particles, in CSS pixels per second. At the reference framerate,
- * this moves a particle by one pixel per frame.
+ * Speed of the particles at `config.speed` 1, in CSS pixels per second.
+ * At the reference framerate, this moves a particle by one pixel per frame.
  */
 const SPEED = REFERENCE_FRAMERATE;
 
@@ -62,6 +62,8 @@ export const DEFAULT_CONFIG = {
   id: 'paint-canvas',
   /** Scale at which particles are initialized, 1 being the size of the screen. */
   init_scale: 1,
+  /** Speed of the animation, 1 being the reference speed. Below 1 is slower, above is faster. */
+  speed: 1,
   text: '',
   text_position_x: 50,
   text_position_y: 33,
@@ -340,12 +342,17 @@ export class Attractors {
     const pointsY = this.#pointsY;
     const total = pointsX.length;
 
-    // Duration of this frame, expressed as a number of reference frames.
-    const elapsed =
+    // Time the piece advances by during this frame: how long the frame lasted,
+    // scaled by the configured speed. Everything below is derived from it, so that
+    // a speed of 2 plays the very same animation twice as fast.
+    const frameDuration =
       this.#lastTimestamp === null
         ? REFERENCE_FRAME_DURATION
         : Math.min(timestamp - this.#lastTimestamp, MAX_FRAME_DURATION);
     this.#lastTimestamp = timestamp;
+    const elapsed = frameDuration * this.config.speed;
+
+    // Duration of this frame, expressed as a number of reference frames.
     const frames = elapsed / REFERENCE_FRAME_DURATION;
 
     // Distance travelled by a particle during this frame.
@@ -372,8 +379,8 @@ export class Attractors {
         const newY = oldY + step * field.x;
 
         // If the field is weak, reduce the probability to draw a shadow. Shadows are
-        // drawn once per frame, so scale it down on displays faster than the reference
-        // framerate, to keep the same amount of shadows per second.
+        // drawn once per frame, so scale it by the time the frame covers, to keep the
+        // same amount of shadows whatever the framerate and the speed.
         this.#drawShadowAtPoint[i] =
           Math.random() <= (field.x * field.x + field.y * field.y) * frames;
 
