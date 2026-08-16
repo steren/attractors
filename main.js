@@ -69,7 +69,8 @@ function onKeyDown(event) {
     event.preventDefault();
     config.text = config.text.slice(0, -1);
     reload();
-  } else if (/^[a-zA-Z\s/]$/.test(event.key)) {
+  } else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
+    // Any printable character: keys such as "ArrowLeft" or "F5" have a longer name.
     config.text += event.key;
     reload();
   } else {

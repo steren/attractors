@@ -47,6 +47,69 @@ const SUBDIVISE_NOGO = 16;
 
 const FONT = 'fonts/CamBam/1CamBam_Stick_2.ttf';
 
+/** Draws a closed outline through the given `[x, y]` points. */
+function polygon(path, points) {
+  path.moveTo(...points[0]);
+  for (const point of points.slice(1)) {
+    path.lineTo(...point);
+  }
+  // Come back to the first point explicitly: a closing "Z" command creates no attractor,
+  // so without this line the last side would attract nothing.
+  path.lineTo(...points[0]);
+  path.close();
+}
+
+/**
+ * Width of a fallback glyph, in font units. Both the triangle and the hexagon are
+ * regular polygons fitting in the cap height, hence `2 / sqrt(3)` as wide as they are tall.
+ */
+function polygonWidth(capHeight) {
+  return (2 / Math.sqrt(3)) * capHeight;
+}
+
+/**
+ * Characters that the fonts have no glyph for, drawn by the library instead.
+ * `outline(path, capHeight, x)` draws the character starting at `x`, on the baseline and
+ * as tall as a capital letter, so that it matches the letters around it. It returns the
+ * width it drew, in font units.
+ */
+const FALLBACK_GLYPHS = [
+  {
+    /** ▲ BLACK UP-POINTING TRIANGLE: an equilateral triangle standing on the baseline. */
+    unicode: 0x25b2,
+    name: 'blackuptriangle',
+    outline(path, capHeight, x) {
+      const width = polygonWidth(capHeight);
+      polygon(path, [
+        [x + width / 2, capHeight],
+        [x + width, 0],
+        [x, 0],
+      ]);
+      return width;
+    },
+  },
+  {
+    /** ⬣ HORIZONTAL BLACK HEXAGON: a regular hexagon lying on a flat side. */
+    unicode: 0x2b23,
+    name: 'horizontalblackhexagon',
+    outline(path, capHeight, x) {
+      const width = polygonWidth(capHeight);
+      polygon(path, [
+        [x, capHeight / 2],
+        [x + width / 4, capHeight],
+        [x + (3 * width) / 4, capHeight],
+        [x + width, capHeight / 2],
+        [x + (3 * width) / 4, 0],
+        [x + width / 4, 0],
+      ]);
+      return width;
+    },
+  },
+];
+
+/** Side bearing of the fallback glyphs, as a fraction of the em square. */
+const FALLBACK_GLYPH_SIDE_BEARING = 0.04;
+
 /**
  * The text that the `cleanPath` command table below was hand-tuned for.
  * When it is rendered, only the listed path commands become attractors.
@@ -129,16 +192,55 @@ function normalRand() {
   }
 }
 
+/** Height of a capital letter of a font, in font units. */
+function getCapHeight(font) {
+  const declared = font.tables.os2?.sCapHeight;
+  if (declared > 0) {
+    return declared;
+  }
+  const { y2 } = font.charToGlyph('A').getBoundingBox();
+  return y2 > 0 && Number.isFinite(y2) ? y2 : 0.7 * font.unitsPerEm;
+}
+
+/**
+ * Adds to a font the glyphs of `FALLBACK_GLYPHS` it does not have, so that the
+ * characters they draw can be used in the text like any other.
+ */
+function addFallbackGlyphs(font, { Glyph, Path }) {
+  const glyphIndexMap = font.tables.cmap?.glyphIndexMap;
+  if (!glyphIndexMap) {
+    return font;
+  }
+
+  const height = getCapHeight(font);
+  const sideBearing = FALLBACK_GLYPH_SIDE_BEARING * font.unitsPerEm;
+
+  for (const { unicode, name, outline } of FALLBACK_GLYPHS) {
+    // The font draws this character itself, nothing to add.
+    if (glyphIndexMap[unicode]) {
+      continue;
+    }
+
+    const path = new Path();
+    const advanceWidth = outline(path, height, sideBearing) + 2 * sideBearing;
+    const index = font.glyphs.length;
+    font.glyphs.push(index, new Glyph({ name, unicode, index, advanceWidth, path }));
+    glyphIndexMap[unicode] = index;
+  }
+
+  return font;
+}
+
 /** Loads and parses a font, memoized by URL. */
 async function loadFont(url) {
   if (!fontCache.has(url)) {
     const promise = (async () => {
-      const { parse } = await import('opentype.js');
+      const opentype = await import('opentype.js');
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Could not load font ${url}: ${response.status}`);
       }
-      return parse(await response.arrayBuffer());
+      return addFallbackGlyphs(opentype.parse(await response.arrayBuffer()), opentype);
     })();
     fontCache.set(url, promise);
   }
