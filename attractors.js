@@ -48,6 +48,37 @@ const SUBDIVISE_NOGO = 16;
 const FONT = 'fonts/CamBam/1CamBam_Stick_2.ttf';
 
 /**
+ * Characters that the fonts have no glyph for, drawn by the library instead.
+ * Their outline is built from the font's cap height, so that they sit on the baseline
+ * and match the size of the letters around them.
+ */
+const FALLBACK_GLYPHS = [
+  {
+    /** ▲ BLACK UP-POINTING TRIANGLE. */
+    unicode: 0x25b2,
+    name: 'blackuptriangle',
+    /**
+     * Draws an equilateral triangle as tall as a capital letter.
+     * @returns {number} The advance width of the glyph, in font units.
+     */
+    outline(path, capHeight, sideBearing) {
+      const side = (2 / Math.sqrt(3)) * capHeight;
+      path.moveTo(sideBearing + side / 2, capHeight);
+      path.lineTo(sideBearing + side, 0);
+      path.lineTo(sideBearing, 0);
+      // Come back to the apex explicitly: a closing "Z" command creates no attractor,
+      // so without this line the third side would attract nothing.
+      path.lineTo(sideBearing + side / 2, capHeight);
+      path.close();
+      return side + 2 * sideBearing;
+    },
+  },
+];
+
+/** Side bearing of the fallback glyphs, as a fraction of the em square. */
+const FALLBACK_GLYPH_SIDE_BEARING = 0.04;
+
+/**
  * The text that the `cleanPath` command table below was hand-tuned for.
  * When it is rendered, only the listed path commands become attractors.
  */
@@ -129,16 +160,55 @@ function normalRand() {
   }
 }
 
+/** Height of a capital letter of a font, in font units. */
+function getCapHeight(font) {
+  const declared = font.tables.os2?.sCapHeight;
+  if (declared > 0) {
+    return declared;
+  }
+  const { y2 } = font.charToGlyph('A').getBoundingBox();
+  return y2 > 0 && Number.isFinite(y2) ? y2 : 0.7 * font.unitsPerEm;
+}
+
+/**
+ * Adds to a font the glyphs of `FALLBACK_GLYPHS` it does not have, so that the
+ * characters they draw can be used in the text like any other.
+ */
+function addFallbackGlyphs(font, { Glyph, Path }) {
+  const glyphIndexMap = font.tables.cmap?.glyphIndexMap;
+  if (!glyphIndexMap) {
+    return font;
+  }
+
+  const height = getCapHeight(font);
+  const sideBearing = FALLBACK_GLYPH_SIDE_BEARING * font.unitsPerEm;
+
+  for (const { unicode, name, outline } of FALLBACK_GLYPHS) {
+    // The font draws this character itself, nothing to add.
+    if (glyphIndexMap[unicode]) {
+      continue;
+    }
+
+    const path = new Path();
+    const advanceWidth = outline(path, height, sideBearing);
+    const index = font.glyphs.length;
+    font.glyphs.push(index, new Glyph({ name, unicode, index, advanceWidth, path }));
+    glyphIndexMap[unicode] = index;
+  }
+
+  return font;
+}
+
 /** Loads and parses a font, memoized by URL. */
 async function loadFont(url) {
   if (!fontCache.has(url)) {
     const promise = (async () => {
-      const { parse } = await import('opentype.js');
+      const opentype = await import('opentype.js');
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Could not load font ${url}: ${response.status}`);
       }
-      return parse(await response.arrayBuffer());
+      return addFallbackGlyphs(opentype.parse(await response.arrayBuffer()), opentype);
     })();
     fontCache.set(url, promise);
   }
