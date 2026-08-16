@@ -2,94 +2,127 @@
 
 <img width="460" alt="large" src="https://user-images.githubusercontent.com/360895/35189698-a8d70dee-fe05-11e7-9886-3ba681b59be8.png">
 
+Generative art: particles flowing through a field of attractors, painted on a `<canvas>`.
+
 See this [playlist of examples on Youtube](https://www.youtube.com/watch?v=8Xckh9zVzU4&list=PL7Bq7_PxIAiCJ3yCgzGKgErZpBk7ipZ0I).
 
-## Using as a dependency
+## Running the page
 
-Install with `npm install attractors` or just clone this repository.
+The site is made of static files, no build step required:
 
-Add a canvas to your page: `<canvas id="paint-canvas"></canvas>`
-
-Configure the library with a global `config` object (sorry)
+```sh
+npm start
 ```
-<script type="text/javascript">
-var config = {
+
+Then open http://localhost:3000. Click anywhere to render a new piece, type to change
+the text, and use the gear in the bottom right corner to toggle the control panel.
+The current configuration is stored in the URL, so any render can be shared as a link.
+
+## Using as a library
+
+Install with `npm install attractors`, then add a canvas to your page:
+
+```html
+<canvas id="paint-canvas"></canvas>
+```
+
+```js
+import { Attractors } from 'attractors';
+
+const attractors = new Attractors({
   id: 'paint-canvas',
-  init_scale: 1,
   text: 'A T T R A C T O R S',
-  text_position_x: 50,
-  text_position_y: 33,
-  text_width_ratio: 12,
   background_color: '#57A3BD',
-  nb_attractors: 25,
-  particule_density: 900,
-  line_width: 0.35,
-  nogo_zone: false,
-  color1: '#DBCEC1',
-  color2: '#F7F6F5',
-  pixelratio: window.devicePixelRatio,
-  root: 'node_modules/attractors/'
-}
-</script>	
+});
+
+await attractors.start();
 ```
 
-If you use the `text` attribute, load the `opentype` library: `<script src="node_modules/attractors/lib/opentype.min.js"></script>`
+`start()` loads the assets, seeds the particles and animates until `stop()` is called.
+Every option that is not provided falls back to the exported `DEFAULT_CONFIG`.
 
-Load the module: `<script src="node_modules/attractors/ninis.js"></script>`
+Fonts and the shadow sprite are loaded relative to the page. When the package is
+installed in `node_modules`, point the library at it with the `root` option:
+
+```js
+new Attractors({ root: 'node_modules/attractors/' });
+```
+
+The text rendering uses [opentype.js](https://github.com/opentypejs/opentype.js), which is
+imported dynamically, and only when the `text` option is set. Without a bundler, map the
+import to a copy of the library:
+
+```html
+<script type="importmap">
+{ "imports": { "opentype.js": "./lib/opentype.mjs" } }
+</script>
+```
 
 ## Configuration
 
-These describe the attributes of the  `config` object that is expected from the library.
+### Setup
 
-### Setup 
 `id`: ID of the DOM canvas on which to paint
+
+`root`: prefix to prepend to the asset URLs (fonts, shadow sprite)
 
 ### Particles
 
-`background_color`: Color to be used as background color. Expects a Canvas compatible color (example: `#57A3BD`)
+`background_color`: color to be used as background color. Expects a canvas compatible color (example: `#57A3BD`)
 
-`line_width`: Width of the particle strokes, in pixel.
+`line_width`: width of the particle strokes, in pixels
 
-`color1`: Color to be used for particle trails (example: '#DBCEC1')
+`color1`: color to be used for particle trails (example: `#DBCEC1`)
 
-`color2`: Secondary color to be used for particle trails (example: '#F7F6F5')
+`color2`: secondary color to be used for particle trails (example: `#F7F6F5`)
 
-`shadow_scale`: Scale of the shadow, defaults to `1`. 
+`shadow_scale`: scale of the shadow, defaults to `1`
 
-`nb_attractors`: Number of attractors in the piece
+`nb_attractors`: number of attractors in the piece
 
-`particule_density`: Density of particle to create, for a square of 1000 * 1000.
+`particule_density`: density of particles to create, for a square of 1000 * 1000 pixels
 
-`init_scale`:  The scale at which particles are initialized. 
-1 means they will spread on an area the size of the screen. 
-2 twice the size of the screen.
-0.5 half the size of the screen.
- 
+`init_scale`: the scale at which particles are initialized.
+`1` means they spread over an area the size of the screen, `2` twice the size of the
+screen, `0.5` half the size of the screen.
 
 ### Text
 
-`text`: String of text to display that will interact with particles
+`text`: string of text to display, that particles will flow around
 
-`text_position_x`
+`text_position_x`, `text_position_y`: position of the text, in percent of the canvas
 
-`text_position_y`
+`text_width_ratio`: the text is `1 / text_width_ratio` as wide as the canvas
 
-`text_width_ratio`
+### Advanced rendering parameters
 
-### Advanced rendering parameters 
+`pixelratio`: number of points in a screen pixel (example: set to `2` on Retina screens).
+Defaults to `window.devicePixelRatio`.
 
-`pixelratio`: Number of points in a screen pixel (example: Set to 2 on Retina screens). Defaults to `window.devicePixelRatio`
+`debug`: draws helpers showing where the attractors are
 
+### No go zones
 
-### No Go zones
+`nogo_zone`: boolean, if set to true, will instanciate areas without particles
 
-`nogo_zone`: Boolean, if set to true, will instanciate areas without particles.
+`nogoParam`: `{x, y, width, height}` of a rectangular area without particles
 
-`nogoCircles` : Array of objects contaning data for empty circles.
+`nogoCircles`: array of `{x, y, radius}` circles without particles
 
+### SVG export
 
-### SVG Export
+`svg`: if set to true, keeps an SVG version of the render in memory
 
-`svg`: If set to true, will keep an SVG version of the render in memory
+`one_path`: if set to true, the created SVG is stored into one single path
 
-`one_path`: If set to true, the created SVG will be stored into one single path.
+Call `attractors.toSVG()` to get the document, or `attractors.saveSVG()` to download it.
+
+## Development
+
+`lib/` holds the browser builds of the dependencies, so that the page runs without a build
+step. Refresh them with:
+
+```sh
+npm install
+npm run vendor
+```
