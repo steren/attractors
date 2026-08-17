@@ -41,6 +41,12 @@ await attractors.start();
 `start()` loads the assets, seeds the particles and animates until `stop()` is called.
 Every option that is not provided falls back to the exported `DEFAULT_CONFIG`.
 
+The piece is rendered in a worker: the canvas is handed over to it with
+[`transferControlToOffscreen()`](https://developer.mozilla.org/docs/Web/API/HTMLCanvasElement/transferControlToOffscreen),
+so that no computation happens on the main thread and the page stays responsive.
+Browsers without `OffscreenCanvas` render on the main thread instead. Either way, a
+canvas that has been rendered once cannot be drawn on by the page anymore.
+
 Fonts and the shadow sprite are loaded relative to the page. When the package is
 installed in `node_modules`, point the library at it with the `root` option:
 
@@ -50,7 +56,8 @@ new Attractors({ root: 'node_modules/attractors/' });
 
 The text rendering uses [opentype.js](https://github.com/opentypejs/opentype.js), which is
 imported dynamically, and only when the `text` option is set. Without a bundler, map the
-import to a copy of the library:
+import to a copy of the library. Workers do not inherit the import map of the page, so the
+module is resolved on the main thread, and its URL passed to the worker:
 
 ```html
 <script type="importmap">
@@ -121,9 +128,19 @@ Defaults to `window.devicePixelRatio`.
 
 `one_path`: if set to true, the created SVG is stored into one single path
 
-Call `attractors.toSVG()` to get the document, or `attractors.saveSVG()` to download it.
+Call `await attractors.toSVG()` to get the document, or `await attractors.saveSVG()` to
+download it. Both are asynchronous, as the render is read back from the worker.
 
 ## Development
+
+The code is split in three modules:
+
+- `attractors.js` is the public API. It only glues the page to the worker: reading the
+  canvas from the document, starting the worker, sending it configurations to render.
+- `attractors-engine.js` holds every computation, from seeding the particles to painting
+  the frames. It touches no DOM, so that it runs in a worker as well as on the main
+  thread.
+- `attractors-worker.js` is the worker itself, a thin layer of messages around the engine.
 
 `lib/` holds the browser builds of the dependencies, so that the page runs without a build
 step. Refresh them with:

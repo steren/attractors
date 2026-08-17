@@ -9,12 +9,14 @@
   },
   "files": [
     "attractors.js",
+    "attractors-engine.js",
+    "attractors-worker.js",
     "fonts",
     "shadow-*.png"
   ],
   "scripts": {
     "start": "npx --yes serve .",
-    "test": "node --check attractors.js && node --check main.js",
+    "test": "node --check attractors.js && node --check attractors-engine.js && node --check attractors-worker.js && node --check main.js",
     "vendor": "cp node_modules/opentype.js/dist/opentype.min.mjs lib/opentype.mjs && cp node_modules/lil-gui/dist/lil-gui.esm.min.js lib/lil-gui.esm.js && sed -i.bak '/sourceMappingURL/d' lib/opentype.mjs lib/lil-gui.esm.js && rm -f lib/*.bak"
   },
   "repository": {

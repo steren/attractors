@@ -1,5 +1,11 @@
 /**
- * Attractors — animated attractor fields painted on a <canvas>.
+ * Attractors rendering engine: seeds the particles, builds the attractor field and
+ * paints every frame.
+ *
+ * This module holds all of the computation, and only needs a canvas and its 2D context:
+ * it touches no DOM, so that `attractors-worker.js` can run it off the main thread, on
+ * an `OffscreenCanvas`. `attractors.js` runs it directly, on the main thread, when the
+ * browser has no `OffscreenCanvas` to transfer.
  *
  * @author annemenini
  * @author steren
@@ -46,6 +52,21 @@ const ATTRACTOR_RADIUS_MAX = 16 * ATTRACTOR_RADIUS_MIN;
 const SUBDIVISE_NOGO = 16;
 
 const FONT = 'fonts/CamBam/1CamBam_Stick_2.ttf';
+
+/**
+ * Schedules the next frame. Dedicated workers do not all expose `requestAnimationFrame`,
+ * so fall back to a timer: the animation is independent of the framerate anyway.
+ */
+const scheduleFrame =
+  typeof requestAnimationFrame === 'function'
+    ? (callback) => requestAnimationFrame(callback)
+    : (callback) => setTimeout(() => callback(performance.now()), REFERENCE_FRAME_DURATION);
+
+/** Cancels a frame scheduled by `scheduleFrame`. */
+const cancelFrame =
+  typeof requestAnimationFrame === 'function'
+    ? (id) => cancelAnimationFrame(id)
+    : (id) => clearTimeout(id);
 
 /** Draws a closed outline through the given `[x, y]` points. */
 function polygon(path, points) {
@@ -115,44 +136,6 @@ const FALLBACK_GLYPH_SIDE_BEARING = 0.04;
  * When it is rendered, only the listed path commands become attractors.
  */
 const CLEAN_PATH_TEXT = '13   8   2016';
-
-/**
- * Default configuration. Every key can be overridden through the constructor.
- * Keys use snake_case for backwards compatibility with URLs sharing a config.
- */
-export const DEFAULT_CONFIG = {
-  /** ID of the DOM canvas on which to paint. */
-  id: 'paint-canvas',
-  /** Scale at which particles are initialized, 1 being the size of the screen. */
-  init_scale: 1,
-  /** Speed of the animation, 1 being the reference speed. Below 1 is slower, above is faster. */
-  speed: 1,
-  text: '',
-  text_position_x: 50,
-  text_position_y: 33,
-  text_width_ratio: 12,
-  background_color: '#57A3BD',
-  nb_attractors: 25,
-  /** Number of particles for a square of 1000 * 1000 pixels. */
-  particule_density: 900,
-  line_width: 0.35,
-  color1: '#DBCEC1',
-  color2: '#F7F6F5',
-  shadow_scale: 1,
-  nogo_zone: false,
-  /** Array of `{x, y, radius, impactDistance?, type?, direction?}` circles without particles. */
-  nogoCircles: [],
-  /** Number of points in a screen pixel. Set to 2 on Retina screens. */
-  pixelratio: globalThis.devicePixelRatio || 1,
-  /** Keep an SVG version of the render in memory, so that it can be exported. */
-  svg: false,
-  /** Store the whole SVG render into a single <path>. */
-  one_path: false,
-  /** Draw helpers showing the attractors. */
-  debug: false,
-  /** Prefix to prepend to the asset URLs (fonts, shadow sprite). */
-  root: '',
-};
 
 /** Assets are shared between renders, so that reloading a config does not refetch them. */
 const fontCache = new Map();
@@ -231,11 +214,21 @@ function addFallbackGlyphs(font, { Glyph, Path }) {
   return font;
 }
 
+/**
+ * Imports opentype.js.
+ * @param {string} [moduleUrl] URL of the module, as resolved by the main thread. Bare
+ *   specifiers go through the import map of the page, which workers do not inherit, so
+ *   the URL is used when there is one and the specifier is only a fallback.
+ */
+async function importOpentype(moduleUrl) {
+  return moduleUrl ? import(/* @vite-ignore */ moduleUrl) : import('opentype.js');
+}
+
 /** Loads and parses a font, memoized by URL. */
-async function loadFont(url) {
+async function loadFont(url, opentypeUrl) {
   if (!fontCache.has(url)) {
     const promise = (async () => {
-      const opentype = await import('opentype.js');
+      const opentype = await importOpentype(opentypeUrl);
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Could not load font ${url}: ${response.status}`);
@@ -247,35 +240,33 @@ async function loadFont(url) {
   return fontCache.get(url);
 }
 
-/** Loads an image, memoized by URL. */
+/**
+ * Loads and decodes an image, memoized by URL. Decoding to an `ImageBitmap` rather than
+ * to an `Image` keeps this off the DOM, so that it also runs in a worker.
+ */
 async function loadImage(url) {
   if (!imageCache.has(url)) {
-    const image = new Image();
-    image.src = url;
-    imageCache.set(url, image.decode().then(() => image));
+    const promise = (async () => {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Could not load image ${url}: ${response.status}`);
+      }
+      return createImageBitmap(await response.blob());
+    })();
+    imageCache.set(url, promise);
   }
   return imageCache.get(url);
-}
-
-/** Triggers the download of a file holding the given content. */
-function download(content, fileName, type) {
-  const url = URL.createObjectURL(new Blob([content], { type }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  link.click();
-  URL.revokeObjectURL(url);
 }
 
 /**
  * An animated attractor field, painted on a canvas.
  *
  * ```js
- * const attractors = new Attractors({ id: 'paint-canvas', text: 'HELLO' });
- * await attractors.start();
+ * const renderer = new Renderer({ canvas, config, screenWidth: 800, screenHeight: 600 });
+ * await renderer.start();
  * ```
  */
-export class Attractors {
+export class Renderer {
   /**
    * Array of attractors, each having:
    *   - x, y: position
@@ -331,19 +322,38 @@ export class Attractors {
   #field = { x: 0, y: 0 };
   #closest = { distance: 0, attractor: null, originX: 0, originY: 0 };
 
-  /** @param {Partial<typeof DEFAULT_CONFIG>} config */
-  constructor(config = {}) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
+  /** URL the assets are loaded from. */
+  #baseUrl = '';
+
+  /** URL of the opentype.js module, when the main thread resolved one. */
+  #opentypeUrl = undefined;
+
+  /**
+   * @param {object} options
+   * @param {HTMLCanvasElement|OffscreenCanvas} options.canvas Canvas to paint on.
+   * @param {object} options.config Configuration of the piece, with every key set.
+   * @param {number} options.screenWidth Width of the canvas on screen, in CSS pixels.
+   * @param {number} options.screenHeight Height of the canvas on screen, in CSS pixels.
+   * @param {string} options.baseUrl URL the asset URLs are relative to.
+   * @param {string} [options.opentypeUrl] URL of the opentype.js module.
+   */
+  constructor({ canvas, config, screenWidth, screenHeight, baseUrl, opentypeUrl }) {
+    this.config = config;
+    this.#canvas = canvas;
+    this.#screenWidth = screenWidth;
+    this.#screenHeight = screenHeight;
+    this.#baseUrl = baseUrl;
+    this.#opentypeUrl = opentypeUrl;
   }
 
   /** Loads the assets, seeds the particles and starts animating. */
   async start() {
     this.#stopped = false;
 
-    const { root, text } = this.config;
+    const { text } = this.config;
     const [shadow, font] = await Promise.all([
-      loadImage(root + SHADOW_IMAGE),
-      text ? loadFont(root + FONT) : null,
+      loadImage(new URL(SHADOW_IMAGE, this.#baseUrl).href),
+      text ? loadFont(new URL(FONT, this.#baseUrl).href, this.#opentypeUrl) : null,
     ]);
     // Another render may have been started while the assets were loading.
     if (this.#stopped) {
@@ -357,10 +367,10 @@ export class Attractors {
     if (this.#frameId === null) {
       this.#lastTimestamp = null;
       const loop = (timestamp) => {
-        this.#frameId = requestAnimationFrame(loop);
+        this.#frameId = scheduleFrame(loop);
         this.#render(timestamp);
       };
-      this.#frameId = requestAnimationFrame(loop);
+      this.#frameId = scheduleFrame(loop);
     }
     return this;
   }
@@ -369,7 +379,7 @@ export class Attractors {
   stop() {
     this.#stopped = true;
     if (this.#frameId !== null) {
-      cancelAnimationFrame(this.#frameId);
+      cancelFrame(this.#frameId);
       this.#frameId = null;
     }
   }
@@ -389,10 +399,6 @@ export class Attractors {
 
     this.#pixelRatio = config.pixelratio || globalThis.devicePixelRatio || 1;
 
-    this.#canvas = document.getElementById(config.id);
-    if (!this.#canvas) {
-      throw new Error(`No canvas with id "${config.id}" in the document`);
-    }
     this.#ctx = this.#canvas.getContext('2d', { alpha: false });
     this.#resizeCanvas();
     this.#d = Math.max(this.#width, this.#height);
@@ -418,8 +424,6 @@ export class Attractors {
   }
 
   #resizeCanvas() {
-    this.#screenWidth = this.#canvas.clientWidth;
-    this.#screenHeight = this.#canvas.clientHeight;
     this.#width = this.#screenWidth * this.#pixelRatio;
     this.#height = this.#screenHeight * this.#pixelRatio;
 
@@ -1005,11 +1009,6 @@ export class Attractors {
 
     return `${svg}</svg>`;
   }
-
-  /** Downloads what has been rendered so far as an SVG file. */
-  saveSVG(fileName = 'attractors.svg') {
-    download(this.toSVG(), fileName, 'image/svg+xml');
-  }
 }
 
 /**
@@ -1027,25 +1026,4 @@ function cleanPathCommands() {
     [1, 21], [0, 21], // 6
   ];
   return runs.flatMap(([value, count]) => new Array(count).fill(value));
-}
-
-/** The instance created by the deprecated `start()` helper. */
-let current = null;
-
-/**
- * Starts a new render, stopping any previous one.
- * @deprecated Prefer `new Attractors(config).start()`.
- */
-export function start(config) {
-  current?.stop();
-  current = new Attractors(config);
-  return current.start();
-}
-
-/**
- * Downloads the render started by `start()` as an SVG file.
- * @deprecated Prefer `attractors.saveSVG()`.
- */
-export function generateSVG() {
-  current?.saveSVG();
 }

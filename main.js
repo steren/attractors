@@ -114,7 +114,9 @@ const advancedFolder = gui.addFolder('Advanced').close();
 advancedFolder.add(config, 'pixelratio', 1, 10).name('pixel ratio');
 advancedFolder.add(config, 'svg').name('record SVG');
 advancedFolder.add(config, 'one_path').name('single path');
-advancedFolder.add({ save: () => attractors?.saveSVG() }, 'save').name('save SVG');
+advancedFolder
+  .add({ save: () => attractors?.saveSVG().catch((error) => console.error(error)) }, 'save')
+  .name('save SVG');
 
 let panelVisible = true;
 settingsButton.addEventListener('click', () => {
