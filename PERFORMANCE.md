@@ -1,18 +1,22 @@
 # Performance evaluation
 
-Where the time of a frame goes today, and what a drastic improvement — WebGL among
-others — would actually buy. Everything below is measured with the harness in
-[`bench/`](bench/README.md).
+Where the time of a frame goes, and what a drastic improvement — WebGL among others —
+would actually buy.
+
+Every number below is measured, on a headless Chromium at 1440 x 900 with a pixel ratio of
+2. The benchmarks themselves are not checked in: they patch the render loop to drive it by
+hand and stub parts of the canvas, which is throwaway code, not something to maintain
+alongside the library.
 
 ## Summary
 
 Painting the shadows and evaluating the field are the whole cost of a frame. Both can be
 made much cheaper **without leaving the canvas 2D context**:
 
-- The shadows are painted as 2083 images a frame. They are a black blob, so they can be
-  filled circles instead — every one of them in a single path, filled once. Measured on
-  the real piece: **the frame goes from 22.7 ms to 5.4 ms**, and the render is hard to
-  tell apart from today's.
+- **Done.** The shadows used to be painted as 2083 images a frame. They are a black blob,
+  so they are filled circles now — every one of them in a single path, filled once. On the
+  real piece the frame went from 22.7 ms to 5.4 ms, for a render that is hard to tell
+  apart from the old one.
 - The field is evaluated for every particle of every frame, though it never changes after
   initialization. Baking it into a grid once is a **20x win** on the JavaScript side, for
   about sixty lines.
@@ -40,6 +44,8 @@ rasterization — filling pixels costs the CPU here what a GPU does essentially 
 Every rasterization-bound number below is called out as such.
 
 ## Where a frame goes
+
+Before the shadow change, which is what made the case for it:
 
 | Part of the frame | ms / frame | Share |
 | --- | ---: | ---: |
@@ -95,8 +101,8 @@ neither ever moves after `#initialize`. Yet it is re-evaluated from scratch for 
 particle of every frame — today, 2435 times a frame, forever, for a function whose answer
 is fixed.
 
-Evaluating it once per cell of a grid and interpolating it afterwards, on the data of a
-real render (`node bench/field.mjs`):
+Evaluating it once per cell of a grid and interpolating it afterwards, on the attractors
+and text segments of a real render:
 
 | Grid spacing | Build | Memory | ms / frame | Speedup | Angle error (median) |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -125,9 +131,11 @@ Cost: about sixty lines, no API change, no new asset. It also subsumes the text 
 the segment scan disappears into the build — and the grid is exactly the texture a GPU
 implementation would need later.
 
-## Option B — draw the shadows without an image
+## Option B — draw the shadows without an image (done)
 
-The shadow sprite is a black radial blob: no color, no detail, a peak alpha of 29/255 and
+This one is implemented: `#render` fills circles, and the sprite is gone.
+
+The shadow sprite was a black radial blob: no color, no detail, a peak alpha of 29/255 and
 a mean of 8.9/255. A filled circle draws the same thing — and every circle of the frame
 can go into **one path, filled once**, instead of 2083 `drawImage` calls.
 
@@ -135,7 +143,7 @@ Measured on the real piece, 600 frames, the same seed in every mode:
 
 | Shadows | ms / frame | The shadow pass | Darkening |
 | --- | ---: | ---: | ---: |
-| 2083 `drawImage` (today) | 22.65 | 18.26 | 16.2 |
+| 2083 `drawImage` (before) | 22.65 | 18.26 | 16.2 |
 | One filled path, radius 6 px, alpha 0.0034 | 5.36 | 0.97 | 15.3 |
 | Two concentric filled paths | 6.69 | 2.30 | 11.1 |
 | No shadows at all | 4.39 | — | — |
@@ -243,15 +251,16 @@ lands.
 
 ## Recommendation
 
-1. **Fill circles instead of drawing the shadow sprite** (option B). 19x on the largest
-   cost of the frame, 2082 fewer draw calls, and the look holds up. Watch the 8 bit
-   rounding: calibrate the radius against the render, not against the ink of the sprite.
+1. ~~**Fill circles instead of drawing the shadow sprite**~~ (option B). Done: 19x on the
+   largest cost of the frame, 2082 fewer draw calls, and the look holds up. Watch the 8 bit
+   rounding if the constants are ever retuned — calibrate the radius against the render,
+   not against the ink of the sprite.
 2. **Bake the field** (option A). 20x on the field math, no API change, no visual risk
    beyond a one-cell smoothing, and it is the prerequisite for any GPU version later.
    After step 1 the field is what is left: at three times the density, 13.8 ms of the
    16.6 ms frame.
-3. **Re-measure on real hardware** with `bench/bench.html`. The split between the two
-   remaining costs — JavaScript and draw calls — decides whether anything else is needed.
+3. **Re-measure on real hardware.** The split between the two remaining costs —
+   JavaScript and draw calls — decides whether anything else is needed.
 4. **WebGL only for scale.** If the goal is 50k particles rather than 2.4k, it is the right
    tool and the baked field is already the input it needs. If the goal is a smoother 60 fps
    at today's density, steps 1 and 2 get there for a fraction of the work and none of the

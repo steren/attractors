@@ -5,10 +5,39 @@
  * @author steren
  */
 
-/** Shadow sprite size, in CSS pixels. */
+/*
+ * Shadows are drawn as plain filled circles: every shadow of a frame goes into a single
+ * path, filled in one call, rather than one image per particle. The sprite they replace
+ * was a black radial blob, so a circle paints the same thing, without the thousands of
+ * `drawImage` calls that used to be the most expensive part of a frame.
+ */
+
+/** Size of the area a shadow covers, in CSS pixels. */
 const SHADOW_SIZE = 16;
-const SHADOW_IMAGE = `shadow-o30-ellipse-${SHADOW_SIZE}px.png`;
-const SHADOW_OPACITY = 0.03;
+
+/**
+ * Radius of a shadow, as a fraction of the area it covers.
+ *
+ * The sprite this replaces looked like a soft blob as wide as `SHADOW_SIZE`, but only its
+ * core ever registered: see `SHADOW_OPACITY`. This is the radius that darkens the canvas
+ * at the rate the sprite did, measured against renders of the same piece.
+ */
+const SHADOW_RADIUS_RATIO = 0.19;
+
+/**
+ * Opacity of a shadow. The sprite peaked at an alpha of 29/255 and was drawn at an opacity
+ * of 0.03, so this is the strongest stamp it ever laid down.
+ *
+ * It cannot go much below this: the canvas holds 8 bit colors, so a stamp fainter than
+ * about `0.5 / 255` of the color underneath it rounds back to that color and paints
+ * nothing at all. That threshold rises as an area darkens, which is what stops the
+ * shadows from ever piling up to black.
+ */
+const SHADOW_OPACITY = 0.0034;
+
+const SHADOW_COLOR = '#000000';
+
+/** Offset of the area a shadow covers from its particle, in CSS pixels. */
 const SHADOW_OFFSET_X = 1;
 const SHADOW_OFFSET_Y = 1;
 
@@ -150,13 +179,12 @@ export const DEFAULT_CONFIG = {
   one_path: false,
   /** Draw helpers showing the attractors. */
   debug: false,
-  /** Prefix to prepend to the asset URLs (fonts, shadow sprite). */
+  /** Prefix to prepend to the asset URLs (fonts). */
   root: '',
 };
 
-/** Assets are shared between renders, so that reloading a config does not refetch them. */
+/** Fonts are shared between renders, so that reloading a config does not refetch them. */
 const fontCache = new Map();
-const imageCache = new Map();
 
 /**
  * Evaluates a Bezier curve of any degree.
@@ -247,16 +275,6 @@ async function loadFont(url) {
   return fontCache.get(url);
 }
 
-/** Loads an image, memoized by URL. */
-async function loadImage(url) {
-  if (!imageCache.has(url)) {
-    const image = new Image();
-    image.src = url;
-    imageCache.set(url, image.decode().then(() => image));
-  }
-  return imageCache.get(url);
-}
-
 /** Triggers the download of a file holding the given content. */
 function download(content, fileName, type) {
   const url = URL.createObjectURL(new Blob([content], { type }));
@@ -321,7 +339,6 @@ export class Attractors {
   #width = 0;
   #height = 0;
   #font = null;
-  #shadow = null;
   #frameId = null;
   #stopped = false;
   /** Timestamp of the previously rendered frame, in milliseconds. */
@@ -341,15 +358,11 @@ export class Attractors {
     this.#stopped = false;
 
     const { root, text } = this.config;
-    const [shadow, font] = await Promise.all([
-      loadImage(root + SHADOW_IMAGE),
-      text ? loadFont(root + FONT) : null,
-    ]);
-    // Another render may have been started while the assets were loading.
+    const font = text ? await loadFont(root + FONT) : null;
+    // Another render may have been started while the font was loading.
     if (this.#stopped) {
       return this;
     }
-    this.#shadow = shadow;
     this.#font = font;
 
     this.#initialize();
@@ -501,19 +514,26 @@ export class Attractors {
       }
     }
 
+    // Every shadow of this frame in one path, so that they are all filled in one call.
     const shadowSize = SHADOW_SIZE * this.#pixelRatio * this.config.shadow_scale;
+    const shadowRadius = SHADOW_RADIUS_RATIO * shadowSize;
+    // The shadow is centered where the sprite that it replaces used to be centered.
+    const shadowOffsetX = shadowSize / 2 - SHADOW_OFFSET_X * this.#pixelRatio;
+    const shadowOffsetY = shadowSize / 2 - SHADOW_OFFSET_Y * this.#pixelRatio;
+
     ctx.globalAlpha = SHADOW_OPACITY;
+    ctx.fillStyle = SHADOW_COLOR;
+    ctx.beginPath();
     for (let i = 0; i < total; i++) {
       if (this.#drawShadowAtPoint[i]) {
-        ctx.drawImage(
-          this.#shadow,
-          pointsX[i] - SHADOW_OFFSET_X * this.#pixelRatio,
-          pointsY[i] - SHADOW_OFFSET_Y * this.#pixelRatio,
-          shadowSize,
-          shadowSize,
-        );
+        const x = pointsX[i] + shadowOffsetX;
+        const y = pointsY[i] + shadowOffsetY;
+        // Start a new subpath: without it, "arc" joins this circle to the previous one.
+        ctx.moveTo(x + shadowRadius, y);
+        ctx.arc(x, y, shadowRadius, 0, 2 * Math.PI);
       }
     }
+    ctx.fill();
     ctx.globalAlpha = 1;
   }
 

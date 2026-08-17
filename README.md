@@ -41,8 +41,8 @@ await attractors.start();
 `start()` loads the assets, seeds the particles and animates until `stop()` is called.
 Every option that is not provided falls back to the exported `DEFAULT_CONFIG`.
 
-Fonts and the shadow sprite are loaded relative to the page. When the package is
-installed in `node_modules`, point the library at it with the `root` option:
+Fonts are loaded relative to the page. When the package is installed in `node_modules`,
+point the library at it with the `root` option:
 
 ```js
 new Attractors({ root: 'node_modules/attractors/' });
@@ -64,7 +64,7 @@ import to a copy of the library:
 
 `id`: ID of the DOM canvas on which to paint
 
-`root`: prefix to prepend to the asset URLs (fonts, shadow sprite)
+`root`: prefix to prepend to the asset URLs (fonts)
 
 ### Particles
 
