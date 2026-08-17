@@ -7,8 +7,15 @@ others — would actually buy. Everything below is measured with the harness in
 ## Summary
 
 Painting the shadows and evaluating the field are the whole cost of a frame. Both can be
-made much cheaper **without leaving the canvas 2D context**, and one of them — baking the
-field — is a 20x win on the JavaScript side for about sixty lines of code.
+made much cheaper **without leaving the canvas 2D context**:
+
+- The shadows are painted as 2083 images a frame. They are a black blob, so they can be
+  filled circles instead — every one of them in a single path, filled once. Measured on
+  the real piece: **the frame goes from 22.7 ms to 5.4 ms**, and the render is hard to
+  tell apart from today's.
+- The field is evaluated for every particle of every frame, though it never changes after
+  initialization. Baking it into a grid once is a **20x win** on the JavaScript side, for
+  about sixty lines.
 
 Switching to WebGL is worth it for one reason only: it is the only way to go far past
 today's particle count, because it removes the per-particle JavaScript loop altogether. It
@@ -118,26 +125,64 @@ Cost: about sixty lines, no API change, no new asset. It also subsumes the text 
 the segment scan disappears into the build — and the grid is exactly the texture a GPU
 implementation would need later.
 
-## Option B — stop making 2000 draw calls for the shadows
+## Option B — draw the shadows without an image
 
-The shadows are 80% of the frame here and, at 4.4 microseconds a call, the largest CPU
-cost per frame on any machine. Three directions, in increasing order of visible change:
+The shadow sprite is a black radial blob: no color, no detail, a peak alpha of 29/255 and
+a mean of 8.9/255. A filled circle draws the same thing — and every circle of the frame
+can go into **one path, filled once**, instead of 2083 `drawImage` calls.
 
-1. **Draw fewer, stronger shadows.** They already appear with a probability that depends
-   on the field. Shadows accumulate on a canvas that is never cleared, so halving their
-   number and doubling `SHADOW_OPACITY` builds up a similar image with more grain. Halves
-   the call cost, directly.
-2. **Shrink the sprite.** The cost above the 9.2 ms floor is pure fill, and it scales with
-   the area: 16 px instead of 32 px saves 14 ms here. On a GPU-rasterized canvas this saves
-   little — it is the part the GPU does for free.
-3. **Paint the shadows as one batched path** — a wide, translucent, round-capped stroke
-   under the trails, in the same style as the trails. That replaces 2083 calls with one.
-   Measured here it is not faster (34.4 ms), because this machine is fill bound and a wide
-   round-capped stroke covers the same pixels. On a GPU-rasterized canvas, where the 4.4
-   microseconds a call is what remains, this is the version that wins. It changes the look:
-   soft streaks under the trails rather than discrete blobs.
+Measured on the real piece, 600 frames, the same seed in every mode:
 
-Only the first is a certain win everywhere.
+| Shadows | ms / frame | The shadow pass | Darkening |
+| --- | ---: | ---: | ---: |
+| 2083 `drawImage` (today) | 22.65 | 18.26 | 16.2 |
+| One filled path, radius 6 px, alpha 0.0034 | 5.36 | 0.97 | 15.3 |
+| Two concentric filled paths | 6.69 | 2.30 | 11.1 |
+| No shadows at all | 4.39 | — | — |
+
+**The shadow pass gets 19x cheaper, and the whole frame 4.2x.** At three times the
+density — 7300 particles — the frame goes from 75.7 ms to 16.6 ms. Unlike the sprite
+sizes above, this is not a software-rasterizer artifact: it removes 2082 draw calls, which
+is CPU work on every machine.
+
+### The catch: 8 bit rounding decides everything
+
+The first attempt drew **nothing at all** — a render pixel for pixel identical to no
+shadows — while looking 19x faster in the timings.
+
+The canvas holds 8 bit colors. A stamp of alpha `a` over a destination `d` leaves
+`d * (1 - a)`, which rounds back to `d` unless `a` is larger than about `0.5 / d` — near
+0.003 on this background. Sizing the circle to lay down as much ink as the sprite gives an
+alpha of 0.0013, and every single stamp rounds away.
+
+The sprite escapes this by a hair: its peak alpha, 29/255 at an opacity of 0.03, is 0.0034
+— just over the line. Its faint outer ring is under it and contributes nothing. So **the
+sprite behaves like a small hard disc**, not like the soft 32 px blob it looks like, and
+the piece darkens by one unit per stamp wherever the sprite's core lands.
+
+Two things follow. Matching the *ink* of the sprite is the wrong calibration; matching the
+*area above the rounding threshold* is the right one — a circle of radius 6 px at alpha
+0.0034, five times smaller than the sprite's footprint. And the accumulation is
+self-limiting: as an area darkens, `0.5 / d` rises, and stamps stop registering. That is
+where the soft look comes from, and a filled circle keeps it, because it is a property of
+the blending and not of the sprite.
+
+### How close it looks
+
+Against the sprite render, the single filled path differs by a mean of 5.2/255 per
+channel; no shadows at all differs by 16.2. Side by side the two are hard to tell apart —
+the relief the shadows give the piece is fully there. The two-layer version is both
+further off (6.7) and more expensive, so the flat disc wins.
+
+One behavioral difference worth knowing: circles that overlap inside a single path are
+filled once, not stacked, so a dense cluster of particles darkens less than it does with
+2083 independent stamps. That is what the remaining 6% of darkening is. It can be
+compensated with a slightly larger radius, and it is arguably the better behavior.
+
+Two smaller variants, for the record: halving the number of shadows and doubling
+`SHADOW_OPACITY` halves the cost of the sprite version on any machine, and shrinking the
+sprite saves fill that a real GPU gives away for free (32 px to 16 px is 14 ms here, and
+close to nothing on a GPU-rasterized canvas).
 
 ## Option C — WebGL
 
@@ -198,10 +243,13 @@ lands.
 
 ## Recommendation
 
-1. **Bake the field** (option A). 20x on the field math, no API change, no visual risk
+1. **Fill circles instead of drawing the shadow sprite** (option B). 19x on the largest
+   cost of the frame, 2082 fewer draw calls, and the look holds up. Watch the 8 bit
+   rounding: calibrate the radius against the render, not against the ink of the sprite.
+2. **Bake the field** (option A). 20x on the field math, no API change, no visual risk
    beyond a one-cell smoothing, and it is the prerequisite for any GPU version later.
-2. **Halve the shadow count and double their opacity** (option B1). Halves the largest
-   per-frame cost, on every machine.
+   After step 1 the field is what is left: at three times the density, 13.8 ms of the
+   16.6 ms frame.
 3. **Re-measure on real hardware** with `bench/bench.html`. The split between the two
    remaining costs — JavaScript and draw calls — decides whether anything else is needed.
 4. **WebGL only for scale.** If the goal is 50k particles rather than 2.4k, it is the right

@@ -36,6 +36,19 @@ path instead of one sprite per particle.
 
 Query parameters: `particles`, `size` (shadow size, in device pixels), `frames`.
 
+## `shadows.html` — painting the shadows without an image
+
+Renders the piece with the shadows painted in different ways, from the same seed, and
+reports the mean brightness of the result — how much the shadows darkened it — so that a
+replacement can be calibrated against the sprite before comparing the two by eye.
+
+Query parameters: `mode` (`sprite`, `ellipse`, `layers`, `none`), `frames`, `radius`
+(fraction of the size of the sprite), `alpha`, `density`.
+
+Watch the alpha: the canvas holds 8 bit colors, and a stamp fainter than about 0.003
+rounds back to the color underneath, painting nothing at all while still costing the
+timings nothing. Always check the brightness against `mode=none` before trusting a number.
+
 ## `field.mjs` — evaluating the field against baking it
 
 ```sh

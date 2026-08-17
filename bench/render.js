@@ -97,6 +97,46 @@ function canvas2dShadowsNatural() {
 }
 
 /**
+ * Shadows painted as one path holding every ellipse, filled once. The sprite is a black
+ * radial blob, so a filled ellipse draws the same thing, without an image and without one
+ * call per particle. The alpha is the one that lays down as much ink as the sprite:
+ * its mean alpha (8.9 / 255) over its area, times the opacity the library draws it with.
+ */
+const SPRITE_INK = (8.9 / 255) * SHADOW_OPACITY * SHADOW_SIZE * SHADOW_SIZE;
+
+function canvas2dShadowsEllipses() {
+  const radius = SHADOW_SIZE / 2;
+  ctx.globalAlpha = SPRITE_INK / (Math.PI * radius * radius);
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  for (let i = 0; i < SHADOWS; i++) {
+    ctx.moveTo(xs[i] + radius, ys[i]);
+    ctx.arc(xs[i], ys[i], radius, 0, 2 * Math.PI);
+  }
+  ctx.fill();
+  ctx.globalAlpha = 1;
+}
+
+/**
+ * Same, in three concentric layers, so that the blob fades out from its centre the way
+ * the sprite does instead of being flat. Three fills for every shadow of the frame.
+ */
+function canvas2dShadowsLayers() {
+  ctx.fillStyle = '#000000';
+  for (const ratio of [1, 0.66, 0.33]) {
+    const radius = (SHADOW_SIZE / 2) * ratio;
+    ctx.globalAlpha = SPRITE_INK / 3 / (Math.PI * radius * radius);
+    ctx.beginPath();
+    for (let i = 0; i < SHADOWS; i++) {
+      ctx.moveTo(xs[i] + radius, ys[i]);
+      ctx.arc(xs[i], ys[i], radius, 0, 2 * Math.PI);
+    }
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/**
  * Shadows painted as one batched path instead of one sprite per particle: a wide,
  * translucent stroke under the trails, in the single path the trails already use.
  */
@@ -330,6 +370,8 @@ const results = {
   canvas2dShadows: measure(canvas2dShadows, flush2d),
   canvas2dShadowsNatural: measure(canvas2dShadowsNatural, flush2d),
   canvas2dShadowsAsPath: measure(canvas2dShadowsAsPath, flush2d),
+  canvas2dShadowsEllipses: measure(canvas2dShadowsEllipses, flush2d),
+  canvas2dShadowsLayers: measure(canvas2dShadowsLayers, flush2d),
   canvas2dBoth: measure(() => { canvas2dLines(); canvas2dShadows(); }, flush2d),
   webglTrails: measure(() => { fillLineBuffers(); webglLines(); }, flushGl),
   webglShadows: measure(() => { fillLineBuffers(); webglShadows(); }, flushGl),
