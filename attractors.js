@@ -19,32 +19,10 @@ const SHADOW_SIZE = 16;
  * Radius of a shadow, as a fraction of the area it covers.
  *
  * The sprite this replaces looked like a soft blob as wide as `SHADOW_SIZE`, but only its
- * core ever registered: see `SHADOW_OPACITY`. This is the radius that darkens the canvas
+ * core ever registered: see `shadow_opacity`. This is the radius that darkens the canvas
  * at the rate the sprite did, measured against renders of the same piece.
- *
- * This is the knob to turn to make the shadows heavier or lighter. `SHADOW_OPACITY` is
- * not: it only moves the render when it crosses a rounding step, and then it moves it a
- * lot.
  */
 const SHADOW_RADIUS_RATIO = 0.196;
-
-/**
- * Opacity of a shadow. The sprite peaked at an alpha of 29/255 and was drawn at an opacity
- * of 0.03, so this is the strongest stamp it ever laid down.
- *
- * It cannot go much below this: the canvas holds 8 bit colors, so a stamp fainter than
- * about `0.5 / 255` of the color underneath it rounds back to that color and paints
- * nothing at all. That threshold rises as an area darkens, which is what stops the
- * shadows from ever piling up to black.
- *
- * The same rounding makes this a staircase rather than a dial: every value from 0.0034 to
- * 0.0058 renders the very same image, and 0.006 — where a third channel of the background
- * starts to darken as well — renders one 64% heavier. Use `SHADOW_RADIUS_RATIO` to tune
- * the weight of the shadows.
- */
-const SHADOW_OPACITY = 0.0034;
-
-const SHADOW_COLOR = '#000000';
 
 /** Offset of the area a shadow covers from its particle, in CSS pixels. */
 const SHADOW_OFFSET_X = 1;
@@ -177,6 +155,24 @@ export const DEFAULT_CONFIG = {
   color1: '#DBCEC1',
   color2: '#F7F6F5',
   shadow_scale: 1,
+  /** Color of the shadows. Expects a canvas compatible color. */
+  shadow_color: '#000000',
+  /**
+   * Opacity of a shadow, which is what the shadows are worth once they pile up: a single
+   * one is far too faint to see.
+   *
+   * The default is what the shadow sprite this replaces laid down at its strongest. Going
+   * much below it paints nothing at all: the canvas holds 8 bit colors, so a stamp fainter
+   * than about `0.5 / 255` of the color underneath rounds back to that color. That
+   * threshold rises as an area darkens, which is what stops the shadows from piling up to
+   * black.
+   *
+   * The same rounding makes this a staircase rather than a dial: on the default
+   * background, every value from 0.0034 to 0.0058 renders the very same image, and 0.006 —
+   * where a third channel of the background starts to darken as well — renders one 64%
+   * heavier. To nudge the weight of the shadows rather than step it, use `shadow_scale`.
+   */
+  shadow_opacity: 0.0034,
   nogo_zone: false,
   /** Array of `{x, y, radius, impactDistance?, type?, direction?}` circles without particles. */
   nogoCircles: [],
@@ -530,8 +526,8 @@ export class Attractors {
     const shadowOffsetX = shadowSize / 2 - SHADOW_OFFSET_X * this.#pixelRatio;
     const shadowOffsetY = shadowSize / 2 - SHADOW_OFFSET_Y * this.#pixelRatio;
 
-    ctx.globalAlpha = SHADOW_OPACITY;
-    ctx.fillStyle = SHADOW_COLOR;
+    ctx.globalAlpha = this.config.shadow_opacity;
+    ctx.fillStyle = this.config.shadow_color;
     ctx.beginPath();
     for (let i = 0; i < total; i++) {
       if (this.#drawShadowAtPoint[i]) {

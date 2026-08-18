@@ -78,6 +78,16 @@ import to a copy of the library:
 
 `shadow_scale`: scale of the shadow, defaults to `1`
 
+`shadow_color`: color of the shadows. Expects a canvas compatible color (example: `#000000`)
+
+`shadow_opacity`: opacity of a single shadow, defaults to `0.0034`. A single one is far
+too faint to see: the piece is what they add up to over the frames. Below about `0.003`
+they stop registering at all, because the canvas holds 8 bit colors and a fainter stamp
+rounds back to the color underneath it. That same rounding makes this a staircase rather
+than a dial — on the default background every value from `0.0034` to `0.0058` renders the
+very same image, and `0.006` renders one 64% heavier. Use `shadow_scale` to nudge the
+weight of the shadows rather than step it
+
 `nb_attractors`: number of attractors in the piece
 
 `particule_density`: density of particles to create, for a square of 1000 * 1000 pixels
