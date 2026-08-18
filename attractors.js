@@ -21,8 +21,12 @@ const SHADOW_SIZE = 16;
  * The sprite this replaces looked like a soft blob as wide as `SHADOW_SIZE`, but only its
  * core ever registered: see `SHADOW_OPACITY`. This is the radius that darkens the canvas
  * at the rate the sprite did, measured against renders of the same piece.
+ *
+ * This is the knob to turn to make the shadows heavier or lighter. `SHADOW_OPACITY` is
+ * not: it only moves the render when it crosses a rounding step, and then it moves it a
+ * lot.
  */
-const SHADOW_RADIUS_RATIO = 0.19;
+const SHADOW_RADIUS_RATIO = 0.196;
 
 /**
  * Opacity of a shadow. The sprite peaked at an alpha of 29/255 and was drawn at an opacity
@@ -32,6 +36,11 @@ const SHADOW_RADIUS_RATIO = 0.19;
  * about `0.5 / 255` of the color underneath it rounds back to that color and paints
  * nothing at all. That threshold rises as an area darkens, which is what stops the
  * shadows from ever piling up to black.
+ *
+ * The same rounding makes this a staircase rather than a dial: every value from 0.0034 to
+ * 0.0058 renders the very same image, and 0.006 — where a third channel of the background
+ * starts to darken as well — renders one 64% heavier. Use `SHADOW_RADIUS_RATIO` to tune
+ * the weight of the shadows.
  */
 const SHADOW_OPACITY = 0.0034;
 
