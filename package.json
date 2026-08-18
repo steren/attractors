@@ -9,8 +9,7 @@
   },
   "files": [
     "attractors.js",
-    "fonts",
-    "shadow-*.png"
+    "fonts"
   ],
   "scripts": {
     "start": "npx --yes serve .",

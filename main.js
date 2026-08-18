@@ -109,6 +109,10 @@ lineFolder.addColor(config, 'color2').name('color 2');
 
 const shadowFolder = gui.addFolder('Shadows').close();
 shadowFolder.add(config, 'shadow_scale', 0, 5).name('scale');
+shadowFolder.addColor(config, 'shadow_color').name('color');
+// A single shadow is far too faint to see, hence the range: the piece is what they add up
+// to. Below 0.003 they stop registering altogether, see `shadow_opacity`.
+shadowFolder.add(config, 'shadow_opacity', 0, 0.02, 0.0001).name('opacity');
 
 const advancedFolder = gui.addFolder('Advanced').close();
 advancedFolder.add(config, 'pixelratio', 1, 10).name('pixel ratio');

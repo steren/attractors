@@ -41,8 +41,8 @@ await attractors.start();
 `start()` loads the assets, seeds the particles and animates until `stop()` is called.
 Every option that is not provided falls back to the exported `DEFAULT_CONFIG`.
 
-Fonts and the shadow sprite are loaded relative to the page. When the package is
-installed in `node_modules`, point the library at it with the `root` option:
+Fonts are loaded relative to the page. When the package is installed in `node_modules`,
+point the library at it with the `root` option:
 
 ```js
 new Attractors({ root: 'node_modules/attractors/' });
@@ -64,7 +64,7 @@ import to a copy of the library:
 
 `id`: ID of the DOM canvas on which to paint
 
-`root`: prefix to prepend to the asset URLs (fonts, shadow sprite)
+`root`: prefix to prepend to the asset URLs (fonts)
 
 ### Particles
 
@@ -77,6 +77,16 @@ import to a copy of the library:
 `color2`: secondary color to be used for particle trails (example: `#F7F6F5`)
 
 `shadow_scale`: scale of the shadow, defaults to `1`
+
+`shadow_color`: color of the shadows. Expects a canvas compatible color (example: `#000000`)
+
+`shadow_opacity`: opacity of a single shadow, defaults to `0.0034`. A single one is far
+too faint to see: the piece is what they add up to over the frames. Below about `0.003`
+they stop registering at all, because the canvas holds 8 bit colors and a fainter stamp
+rounds back to the color underneath it. That same rounding makes this a staircase rather
+than a dial — on the default background every value from `0.0034` to `0.0058` renders the
+very same image, and `0.006` renders one 64% heavier. Use `shadow_scale` to nudge the
+weight of the shadows rather than step it
 
 `nb_attractors`: number of attractors in the piece
 
